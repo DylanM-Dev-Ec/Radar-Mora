@@ -15,6 +15,12 @@ if hasattr(sys.stdout, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8")
     except Exception:
         pass
+# Fallback si la consola sigue en cp1252
+_ASCII_MODE = False
+try:
+    "🏦".encode(sys.stdout.encoding or "utf-8")
+except (UnicodeEncodeError, AttributeError):
+    _ASCII_MODE = True
 
 # Asegurar que el directorio backend esté en el path
 backend_dir = os.path.dirname(os.path.abspath(__file__))
@@ -25,20 +31,24 @@ from models.data_generator import generate_data
 from models.risk_model import train_model, model_exists
 
 
+def _out(msg: str) -> None:
+    print(msg.encode("ascii", "replace").decode("ascii") if _ASCII_MODE else msg)
+
+
 def main():
     print("\n" + "=" * 60)
-    print("  🏦 CoopTech Tulcán - Sistema de Riesgo Crediticio")
-    print("  📍 Cooperativa de Ahorro y Crédito")
+    _out("  CoopTech Tulcan - Sistema de Riesgo Crediticio")
+    _out("  Cooperativa de Ahorro y Credito")
     print("=" * 60)
 
     db_path = get_db_path()
 
     # Paso 1: Generar datos si no existen
     if not db_exists():
-        print("\n📦 Base de datos no encontrada. Generando datos sintéticos...")
+        _out("\n[DB] Base de datos no encontrada. Generando datos sinteticos...")
         generate_data(db_path, n_socios=500)
     else:
-        print(f"\n✅ Base de datos encontrada: {db_path}")
+        _out(f"\n[OK] Base de datos encontrada: {db_path}")
         print(f"   Socios: {get_table_count('socios')}")
         print(f"   Créditos: {get_table_count('creditos')}")
         print(f"   Pagos: {get_table_count('pagos')}")
@@ -52,38 +62,38 @@ def main():
             "SELECT 1 as ok FROM sqlite_master WHERE type='table' AND name='dataset_maestro'"
         )
         if not has_maestro:
-            print("\n📊 CSV de producción detectado. Importando dataset maestro...")
+            _out("\n[CSV] Dataset de produccion detectado. Importando dataset maestro...")
             try:
                 from import_real_data import main as import_maestro
                 import_maestro()
             except Exception as e:
-                print(f"   ⚠ No se pudo importar dataset maestro: {e}")
+                _out(f"   [WARN] No se pudo importar dataset maestro: {e}")
 
     # Paso 2: Entrenar modelo si no existe
     if not model_exists():
-        print("\n🤖 Modelo no encontrado. Entrenando modelo de riesgo...")
+        _out("\n[AI] Modelo no encontrado. Entrenando modelo de riesgo...")
         metrics = train_model()
-        print(f"\n   ✅ Modelo entrenado con accuracy: {metrics['accuracy']:.4f}")
+        _out(f"\n   [OK] Modelo entrenado con accuracy: {metrics['accuracy']:.4f}")
     else:
         from models.risk_model import get_model_info
         info = get_model_info()
-        print(f"\n✅ Modelo cargado")
+        _out("\n[OK] Modelo cargado")
         print(f"   Accuracy: {info.get('accuracy', 'N/A')}")
-        print(f"   Último entrenamiento: {info.get('last_trained', 'N/A')}")
+        print(f"   Ultimo entrenamiento: {info.get('last_trained', 'N/A')}")
 
     # Paso 3: Precalentar caché de predicciones (evita carga lenta en el primer request)
     if model_exists():
-        print("\n⚡ Precalentando predicciones de riesgo...")
+        _out("\n[Cache] Precalentando predicciones de riesgo...")
         from models.risk_model import predict_all
         risks = predict_all()
-        print(f"   ✅ {len(risks)} socios listos en caché")
+        _out(f"   [OK] {len(risks)} socios listos en cache")
 
     # Paso 4: Iniciar servidor
     print("\n" + "=" * 60)
-    print("  🚀 Iniciando servidor FastAPI...")
-    print("  📡 URL: http://localhost:8000")
-    print("  📖 Docs: http://localhost:8000/docs")
-    print("  🔗 CORS habilitado para: http://localhost:5173")
+    _out("  [Server] Iniciando servidor FastAPI...")
+    _out("  URL: http://localhost:8000")
+    _out("  Docs: http://localhost:8000/docs")
+    _out("  CORS: http://localhost:5173")
     print("=" * 60 + "\n")
 
     import uvicorn
