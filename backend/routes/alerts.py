@@ -11,71 +11,21 @@ router = APIRouter(prefix="/api", tags=["Alertas y Modelo"])
 
 @router.get("/alerts")
 def get_alerts(limit: int = 150):
-    """Genera alertas basadas en el análisis de riesgo y comportamiento."""
+    """Genera alertas basadas en el comportamiento conductual y desvíos financieros."""
 
     alerts = []
     alert_id = 0
 
     if not model_exists():
-        return alerts
+        return {
+            "alerts": [],
+            "total_counts": {"alta": 0, "media": 0, "baja": 0}
+        }
 
     risks = predict_all()
+    risk_map = {r["socio_id"]: r for r in risks}
 
-    # ─── 1. Socios con riesgo Crítico o Alto ───
-    # Filtramos y ordenamos los riesgos de forma descendente para procesar solo los más severos
-    critical_and_high_risks = [r for r in risks if r["risk_level"] in ("Crítico", "Alto")]
-    critical_and_high_risks.sort(key=lambda x: x["risk_score"], reverse=True)
-    
-    # Seleccionamos un número controlado de riesgos máximos a evaluar (ej. limit * 2)
-    top_risks = critical_and_high_risks[:max(300, limit * 2)]
-    top_risk_map = {r["socio_id"]: r for r in top_risks}
-
-    if top_risk_map:
-        placeholders = ",".join(["?" for _ in top_risk_map.keys()])
-        socios_riesgo = execute_query(
-            f"SELECT s.id, s.nombre FROM socios s "
-            f"JOIN creditos c ON c.socio_id = s.id "
-            f"WHERE s.id IN ({placeholders}) AND s.estado = 'Activo' "
-            f"AND c.estado IN ('Vigente', 'Mora', 'Reestructurado') "
-            f"GROUP BY s.id",
-            tuple(top_risk_map.keys())
-        )
-    else:
-        socios_riesgo = []
-
-    for s in socios_riesgo:
-        risk_data = top_risk_map.get(s["id"])
-        if not risk_data:
-            continue
-
-        if risk_data["risk_level"] == "Crítico":
-            alert_id += 1
-            alerts.append({
-                "id": alert_id,
-                "socio_id": s["id"],
-                "socio_nombre": s["nombre"],
-                "tipo": "Cambio de categoría",
-                "mensaje": f"Socio clasificado en riesgo CRÍTICO con score de {risk_data['risk_score']}. Requiere atención inmediata.",
-                "fecha": "2026-05-21",
-                "risk_score": risk_data["risk_score"],
-                "risk_level": risk_data["risk_level"],
-                "prioridad": "alta",
-            })
-        elif risk_data["risk_level"] == "Alto":
-            alert_id += 1
-            alerts.append({
-                "id": alert_id,
-                "socio_id": s["id"],
-                "socio_nombre": s["nombre"],
-                "tipo": "Cambio de categoría",
-                "mensaje": f"Socio en riesgo ALTO con score de {risk_data['risk_score']}. Se recomienda seguimiento.",
-                "fecha": "2026-05-21",
-                "risk_score": risk_data["risk_score"],
-                "risk_level": risk_data["risk_level"],
-                "prioridad": "media",
-            })
-
-    # ─── 2. Atrasos detectados (pagos con más de 30 días de atraso) ───
+    # ─── 1. Atrasos detectados (pagos con más de 30 días de atraso) ───
     atrasos = execute_query("""
         SELECT
             s.id as socio_id, s.nombre,
@@ -90,7 +40,6 @@ def get_alerts(limit: int = 150):
         LIMIT 30
     """)
 
-    risk_map = {r["socio_id"]: r for r in risks}
     for a in atrasos:
         risk_data = risk_map.get(a["socio_id"], {"risk_score": 0, "risk_level": "Sin datos"})
         alert_id += 1
@@ -106,7 +55,7 @@ def get_alerts(limit: int = 150):
             "prioridad": "alta" if a["max_atraso"] > 60 else "media",
         })
 
-    # ─── 3. Saldo crítico (últimas transacciones con saldo muy bajo) ───
+    # ─── 2. Saldo crítico (últimas transacciones con saldo muy bajo) ───
     saldos_criticos = execute_query("""
         SELECT
             t.socio_id, s.nombre, t.saldo_resultante
@@ -136,7 +85,7 @@ def get_alerts(limit: int = 150):
             "prioridad": "media",
         })
 
-    # ─── 4. Patrón inusual (alta frecuencia de retiros recientes) ───
+    # ─── 3. Patrón inusual (alta frecuencia de retiros recientes) ───
     patrones = execute_query("""
         SELECT
             t.socio_id, s.nombre,
@@ -171,7 +120,17 @@ def get_alerts(limit: int = 150):
     prioridad_order = {"alta": 0, "media": 1, "baja": 2}
     alerts.sort(key=lambda x: (prioridad_order.get(x["prioridad"], 3), -x["risk_score"]))
 
-    return alerts[:limit]
+    # Computar contadores globales antes del límite
+    total_counts = {
+        "alta": len([a for a in alerts if a["prioridad"] in ("alta", "critica")]),
+        "media": len([a for a in alerts if a["prioridad"] == "media"]),
+        "baja": len([a for a in alerts if a["prioridad"] == "baja"])
+    }
+
+    return {
+        "alerts": alerts[:limit],
+        "total_counts": total_counts
+    }
 
 
 @router.get("/model/feature-importance")

@@ -559,14 +559,29 @@ export default function SocioProfile() {
               <tbody>
                 {payments.map((p, i) => {
                   const atraso = p.dias_atraso || 0;
-                  const estado = atraso > 5 ? 'critico' : atraso > 0 ? 'medio' : 'bajo';
+                  const isPaid = p.estado === 'Pagado';
+                  
+                  let badgeClass = 'bajo';
+                  let badgeText = 'Al día';
+                  
+                  if (isPaid) {
+                    badgeClass = 'bajo';
+                    badgeText = 'Pagado';
+                  } else if (p.estado === 'Atrasado' || atraso > 0) {
+                    badgeClass = atraso > 5 ? 'critico' : 'medio';
+                    badgeText = 'Atrasado';
+                  } else {
+                    badgeClass = 'bajo';
+                    badgeText = 'Al día';
+                  }
+                  
                   return (
                     <tr key={i}>
                       <td className="cell-muted">#{p.num_cuota ?? i + 1}</td>
                       <td className="cell-strong">${(p.monto_esperado || 0).toLocaleString()}</td>
                       <td className="cell-strong">${(p.monto_pagado || 0).toLocaleString()}</td>
                       <td className="cell-muted">{atraso}</td>
-                      <td><span className={`badge ${estado}`}>{atraso > 0 ? 'Atrasado' : 'Al día'}</span></td>
+                      <td><span className={`badge ${badgeClass}`}>{badgeText}</span></td>
                     </tr>
                   );
                 })}
@@ -611,9 +626,9 @@ export default function SocioProfile() {
                   <td>
                     <div className="risk-bar">
                       <div className="risk-bar-track" style={{ maxWidth: 60 }}>
-                        <div className="risk-bar-fill" style={{ width: `${(c.progreso || 0) * 100}%`, background: COOP.acentoDorado }} />
+                        <div className="risk-bar-fill" style={{ width: `${Math.min(100, c.progreso || 0)}%`, background: COOP.acentoDorado }} />
                       </div>
-                      <span className="cell-muted" style={{ fontSize: 12 }}>{((c.progreso || 0) * 100).toFixed(0)}%</span>
+                      <span className="cell-muted" style={{ fontSize: 12 }}>{Math.min(100, c.progreso || 0).toFixed(0)}%</span>
                     </div>
                   </td>
                 </tr>

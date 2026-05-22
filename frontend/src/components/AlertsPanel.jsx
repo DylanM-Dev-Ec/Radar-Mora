@@ -73,6 +73,7 @@ export default function AlertsPanel() {
   // Data state
   const [alerts, setAlerts] = useState([]);
   const [preventiveAlerts, setPreventiveAlerts] = useState([]);
+  const [totalCounts, setTotalCounts] = useState({ alta: 0, media: 0, baja: 0 });
   const [modelInfo, setModelInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -103,6 +104,16 @@ export default function AlertsPanel() {
       
       const list = Array.isArray(alertsData) ? alertsData : (alertsData?.alerts || []);
       setAlerts(list);
+      
+      if (alertsData && !Array.isArray(alertsData) && alertsData.total_counts) {
+        setTotalCounts(alertsData.total_counts);
+      } else {
+        setTotalCounts({
+          alta: list.filter((a) => a.prioridad === 'alta' || a.prioridad === 'critica').length,
+          media: list.filter((a) => a.prioridad === 'media').length,
+          baja: list.filter((a) => a.prioridad === 'baja').length,
+        });
+      }
       
       const prevList = Array.isArray(preventiveData) ? preventiveData : [];
       setPreventiveAlerts(prevList);
@@ -186,11 +197,7 @@ export default function AlertsPanel() {
   });
 
   // Tab 1 counts
-  const counts = {
-    alta: alerts.filter((a) => a.prioridad === 'alta' || a.prioridad === 'critica').length,
-    media: alerts.filter((a) => a.prioridad === 'media').length,
-    baja: alerts.filter((a) => a.prioridad === 'baja').length,
-  };
+  const counts = totalCounts;
 
   // Tab 2 metrics
   const totalPreventiveCount = preventiveAlerts.length;
