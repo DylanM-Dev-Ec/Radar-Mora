@@ -76,6 +76,30 @@ def main():
     df["ingresos_socio"] = df["ingresos_socio"].fillna(500.0).astype(float)
     df["egresos_socio"] = df["egresos_socio"].fillna(450.0).astype(float)
 
+    # Aplicar Criterio Regulatorio SEPS (Ecuador) para corregir es_moroso en df
+    print("\n[SEPS] Aplicando Criterio Regulatorio SEPS a la columna 'es_moroso'...")
+    def calculate_seps_mora(row):
+        d_mora = int(row["dias_mora"])
+        est_raw = clean_string(row["estado_op"]).upper()
+        tipo_raw = clean_string(row["tipo_cartera"]).upper()
+        
+        if est_raw in ["VENCIDO", "CASTIGADO", "JUDICIAL", "RESOLUCION", "MORA"]:
+            return 1
+        if tipo_raw == "MICROCREDITO" and d_mora > 15:
+            return 1
+        if tipo_raw == "CONSUMO" and d_mora > 30:
+            return 1
+        if tipo_raw == "VIVIENDA" and d_mora > 60:
+            return 1
+        if tipo_raw not in ["MICROCREDITO", "CONSUMO", "VIVIENDA"] and d_mora > 30:
+            return 1
+        return 0
+
+    df["es_moroso"] = df.apply(calculate_seps_mora, axis=1)
+    seps_mora_count = df["es_moroso"].sum()
+    seps_total_count = df.shape[0]
+    print(f"   [SEPS] Operaciones en Mora corregidas: {seps_mora_count} de {seps_total_count} ({seps_mora_count/seps_total_count*100:.2f}%)")
+
     os.makedirs(DB_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -244,10 +268,11 @@ def main():
 
         est_raw = clean_string(row["estado_op"]).upper()
         dias_mora = int(row["dias_mora"])
-        es_moroso = int(row["es_moroso"])
         
-        # Si tiene días de mora o está marcado como moroso en maestro, su estado real de riesgo es 'Mora'
-        if dias_mora > 0 or es_moroso == 1 or est_raw in ["VENCIDO", "CASTIGADO", "JUDICIAL", "RESOLUCION", "MORA"]:
+        # Criterio Regulatorio SEPS (Ecuador) para clasificar la cartera en Mora:
+        is_seps_mora = (row["es_moroso"] == 1)
+            
+        if is_seps_mora:
             estado = "Mora"
         else:
             estado = estado_map.get(est_raw, "Vigente")
@@ -283,11 +308,9 @@ def main():
         fecha_des_str = clean_string(row["fecha_concesion_op"])[:10]
         
         dias_mora = int(row["dias_mora"])
-        es_moroso = int(row["es_moroso"])
-        est_raw = clean_string(row["estado_op"]).upper()
         
-        # Determinar si la operación se catalogó como Mora
-        is_mora_credit = (dias_mora > 0 or es_moroso == 1 or est_raw in ["VENCIDO", "CASTIGADO", "JUDICIAL", "RESOLUCION", "MORA"])
+        # Determinar si la operación se catalogó como Mora según el Criterio Regulatorio SEPS
+        is_mora_credit = (row["es_moroso"] == 1)
         
         cuotas_atra = int(row["nro_cuotas_atra"]) if not pd.isna(row["nro_cuotas_atra"]) else 0
         
