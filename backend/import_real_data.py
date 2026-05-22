@@ -243,7 +243,14 @@ def main():
         cuota_mensual = round(cuota_mensual, 2)
 
         est_raw = clean_string(row["estado_op"]).upper()
-        estado = estado_map.get(est_raw, "Vigente")
+        dias_mora = int(row["dias_mora"])
+        es_moroso = int(row["es_moroso"])
+        
+        # Si tiene días de mora o está marcado como moroso en maestro, su estado real de riesgo es 'Mora'
+        if dias_mora > 0 or es_moroso == 1 or est_raw in ["VENCIDO", "CASTIGADO", "JUDICIAL", "RESOLUCION", "MORA"]:
+            estado = "Mora"
+        else:
+            estado = estado_map.get(est_raw, "Vigente")
         
         tipo_raw = clean_string(row["tipo_cartera"]).upper()
         tipo = tipo_map.get(tipo_raw, "Consumo")
@@ -276,7 +283,24 @@ def main():
         fecha_des_str = clean_string(row["fecha_concesion_op"])[:10]
         
         dias_mora = int(row["dias_mora"])
+        es_moroso = int(row["es_moroso"])
+        est_raw = clean_string(row["estado_op"]).upper()
+        
+        # Determinar si la operación se catalogó como Mora
+        is_mora_credit = (dias_mora > 0 or es_moroso == 1 or est_raw in ["VENCIDO", "CASTIGADO", "JUDICIAL", "RESOLUCION", "MORA"])
+        
         cuotas_atra = int(row["nro_cuotas_atra"]) if not pd.isna(row["nro_cuotas_atra"]) else 0
+        
+        # Si tiene días de mora pero cuotas atrasadas registradas en 0, estimamos al menos 1 cuota atrasada
+        if dias_mora > 0 and cuotas_atra == 0:
+            cuotas_atra = max(1, int(np.ceil(dias_mora / 30)))
+            
+        # Si está en mora pero no tiene días de mora registrados, estimamos atraso mínimo
+        if is_mora_credit and dias_mora == 0:
+            dias_mora = 30
+            if cuotas_atra == 0:
+                cuotas_atra = 1
+        
         cuota_mensual = round(monto / max(1, plazo) + (monto * (tasa / 100) / 12), 2)
 
         try:
