@@ -177,3 +177,7 @@ cooptech.db-journal
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local tooling / deploy
+.vercel/
+.playwright-mcp/

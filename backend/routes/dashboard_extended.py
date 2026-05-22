@@ -5,6 +5,7 @@ import time
 from fastapi import APIRouter
 from database import execute_query, execute_query_one
 from routes.dashboard_extended_synthetic import get_extended_stats_synthetic
+from chart_series import enrich_mora_rango_series
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -32,9 +33,17 @@ _EMPTY_EXTENDED = {
 
 
 def _table_exists(name: str) -> bool:
-    row = execute_query_one(
-        "SELECT 1 as ok FROM sqlite_master WHERE type='table' AND name=?", (name,)
-    )
+    from database import DB_URL
+    if DB_URL:
+        row = execute_query_one(
+            "SELECT 1 as ok FROM information_schema.tables WHERE table_name = ?",
+            (name,),
+        )
+    else:
+        row = execute_query_one(
+            "SELECT 1 as ok FROM sqlite_master WHERE type='table' AND name=?",
+            (name,),
+        )
     return row is not None
 
 
@@ -288,6 +297,7 @@ def get_extended_stats():
     # Ordenar rangos de monto lógicamente
     orden_rangos = {'0 - 5K': 1, '5K - 10K': 2, '10K - 25K': 3, '25K+': 4}
     mora_por_rango_monto.sort(key=lambda x: orden_rangos.get(x["rango"], 99))
+    mora_por_rango_monto = enrich_mora_rango_series(mora_por_rango_monto)
 
     # 5. Mora por Zona Geográfica
     zona_results = execute_query("""
@@ -748,4 +758,9 @@ def get_extended_stats():
     }
     _EXTENDED_STATS_CACHE = result_data
     _EXTENDED_STATS_CACHE_TIMESTAMP = now
+    try:
+        from models.statistical_risk_factors import invalidate_statistical_benchmarks
+        invalidate_statistical_benchmarks()
+    except ImportError:
+        pass
     return result_data

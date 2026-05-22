@@ -1,0 +1,14 @@
+# Ignore heavy python venvs and backend
+venv/
+backend/
+dataset_maestro_dashboard.csv
+test_http.py
+
+# Ignore node_modules
+node_modules/
+frontend/node_modules/
+
+# Ignore git and local tools
+.git/
+.github/
+.vscode/

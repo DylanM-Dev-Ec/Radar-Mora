@@ -1,75 +1,151 @@
+import { useId } from 'react';
 import { RISK_COLORS, COOP } from '../theme';
 
-export default function RiskGauge({ score = 0, size = 200 }) {
-  const clampedScore = Math.max(0, Math.min(100, score));
-  const level = clampedScore <= 30 ? 'Bajo' : clampedScore <= 60 ? 'Medio' : clampedScore <= 80 ? 'Alto' : 'Crítico';
+function polar(cx, cy, r, angleRad) {
+  return {
+    x: cx + r * Math.cos(angleRad),
+    y: cy - r * Math.sin(angleRad),
+  };
+}
+
+function arcPath(cx, cy, r, startRad, endRad) {
+  const start = polar(cx, cy, r, startRad);
+  const end = polar(cx, cy, r, endRad);
+  const span = Math.abs(startRad - endRad);
+  const largeArc = span > Math.PI ? 1 : 0;
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+}
+
+export default function RiskGauge({ score = 0, size = 200, className = '' }) {
+  const uid = useId().replace(/:/g, '');
+  const clampedScore = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+  const level =
+    clampedScore >= 75 ? 'Crítico' : clampedScore >= 55 ? 'Alto' : clampedScore >= 35 ? 'Medio' : 'Bajo';
   const color = RISK_COLORS[level];
 
-  const cx = size / 2;
-  const cy = size / 2 + 10;
-  const radius = size * 0.38;
-  const strokeWidth = size * 0.08;
+  const width = size;
+  const height = Math.round(size * 0.58);
+  const strokeWidth = Math.max(10, Math.round(size * 0.07));
+  const radius = width * 0.36;
+  const cx = width / 2;
+  const cy = height - strokeWidth * 0.6;
 
-  // Arc from 180° to 0° (semicircle, left to right)
   const startAngle = Math.PI;
   const endAngle = 0;
-  const totalAngle = Math.PI;
-  const progressAngle = startAngle - (clampedScore / 100) * totalAngle;
+  const progressAngle = startAngle - (clampedScore / 100) * Math.PI;
 
-  const bgArcStart = { x: cx + radius * Math.cos(startAngle), y: cy - radius * Math.sin(startAngle) };
-  const bgArcEnd = { x: cx + radius * Math.cos(endAngle), y: cy - radius * Math.sin(endAngle) };
-  const progArcEnd = { x: cx + radius * Math.cos(progressAngle), y: cy - radius * Math.sin(progressAngle) };
+  const bgPath = arcPath(cx, cy, radius, startAngle, endAngle);
+  const progPath = clampedScore > 0 ? arcPath(cx, cy, radius, startAngle, progressAngle) : '';
+  const needle = polar(cx, cy, radius, progressAngle);
 
-  const bgPath = `M ${bgArcStart.x} ${bgArcStart.y} A ${radius} ${radius} 0 0 1 ${bgArcEnd.x} ${bgArcEnd.y}`;
-  const largeArc = clampedScore > 50 ? 1 : 0;
-  const progPath = `M ${bgArcStart.x} ${bgArcStart.y} A ${radius} ${radius} 0 ${largeArc} 1 ${progArcEnd.x} ${progArcEnd.y}`;
+  const gradId = `gaugeGrad-${uid}`;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width={size} height={size * 0.6} viewBox={`0 0 ${size} ${size * 0.65}`}>
+    <div className={className} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg
+        width={width}
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        style={{ display: 'block', overflow: 'visible' }}
+        aria-hidden
+      >
         <defs>
-          <linearGradient id={`gaugeGrad-${score}`} x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient
+            id={gradId}
+            gradientUnits="userSpaceOnUse"
+            x1={cx - radius}
+            y1={cy}
+            x2={cx + radius}
+            y2={cy}
+          >
             <stop offset="0%" stopColor={RISK_COLORS.Bajo} />
             <stop offset="40%" stopColor={RISK_COLORS.Medio} />
             <stop offset="70%" stopColor={RISK_COLORS.Alto} />
             <stop offset="100%" stopColor={RISK_COLORS.Crítico} />
           </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
-        {/* Background arc */}
-        <path d={bgPath} fill="none" stroke="#e0e0e0" strokeWidth={strokeWidth} strokeLinecap="round" />
+        <path
+          d={bgPath}
+          fill="none"
+          stroke="#e8eaed"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
 
-        {/* Progress arc */}
-        {clampedScore > 0 && (
-          <path d={progPath} fill="none" stroke={`url(#gaugeGrad-${score})`} strokeWidth={strokeWidth} strokeLinecap="round" filter="url(#glow)"
-            style={{ transition: 'all 1s ease' }} />
+        {progPath && (
+          <path
+            d={progPath}
+            fill="none"
+            stroke={`url(#${gradId})`}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+          />
         )}
 
-        {/* Needle dot */}
-        <circle cx={progArcEnd.x} cy={progArcEnd.y} r={strokeWidth * 0.5} fill={color} filter="url(#glow)" />
+        {clampedScore > 0 && (
+          <circle cx={needle.x} cy={needle.y} r={strokeWidth * 0.45} fill={color} />
+        )}
 
-        {/* Score text */}
-        <text x={cx} y={cy - 8} textAnchor="middle" fill={COOP.textoPrincipal} fontSize={size * 0.18} fontWeight="800" fontFamily="Roboto, Segoe UI, sans-serif">
+        <text
+          x={cx}
+          y={cy - radius * 0.35}
+          textAnchor="middle"
+          fill={COOP.textoPrincipal}
+          fontSize={size * 0.17}
+          fontWeight="800"
+          fontFamily="Roboto, Segoe UI, sans-serif"
+        >
           {clampedScore}
         </text>
-        <text x={cx} y={cy + size * 0.08} textAnchor="middle" fill={COOP.textoSecundario} fontSize={size * 0.06} fontWeight="500" fontFamily="Roboto, Segoe UI, sans-serif">
+        <text
+          x={cx}
+          y={cy - radius * 0.35 + size * 0.1}
+          textAnchor="middle"
+          fill={COOP.textoSecundario}
+          fontSize={size * 0.055}
+          fontWeight="500"
+          fontFamily="Roboto, Segoe UI, sans-serif"
+        >
           de 100
         </text>
 
-        {/* Scale labels */}
-        <text x={bgArcStart.x + 4} y={cy + 16} textAnchor="middle" fill={COOP.textoSecundario} fontSize={10} fontFamily="Roboto, Segoe UI, sans-serif">0</text>
-        <text x={cx} y={cy - radius - strokeWidth - 4} textAnchor="middle" fill={COOP.textoSecundario} fontSize={10} fontFamily="Roboto, Segoe UI, sans-serif">50</text>
-        <text x={bgArcEnd.x - 4} y={cy + 16} textAnchor="middle" fill={COOP.textoSecundario} fontSize={10} fontFamily="Roboto, Segoe UI, sans-serif">100</text>
+        <text
+          x={polar(cx, cy, radius, startAngle).x}
+          y={cy + strokeWidth * 0.9}
+          textAnchor="middle"
+          fill={COOP.textoSecundario}
+          fontSize={10}
+          fontFamily="Roboto, Segoe UI, sans-serif"
+        >
+          0
+        </text>
+        <text
+          x={cx}
+          y={polar(cx, cy, radius, Math.PI / 2).y - strokeWidth * 0.35}
+          textAnchor="middle"
+          fill={COOP.textoSecundario}
+          fontSize={10}
+          fontFamily="Roboto, Segoe UI, sans-serif"
+        >
+          50
+        </text>
+        <text
+          x={polar(cx, cy, radius, endAngle).x}
+          y={cy + strokeWidth * 0.9}
+          textAnchor="middle"
+          fill={COOP.textoSecundario}
+          fontSize={10}
+          fontFamily="Roboto, Segoe UI, sans-serif"
+        >
+          100
+        </text>
       </svg>
 
-      <div className={`badge ${level.toLowerCase()}`} style={{ marginTop: -4, fontSize: 14, padding: '5px 16px' }}>
+      <div
+        className={`badge ${level.toLowerCase()}`}
+        style={{ marginTop: 4, fontSize: 14, padding: '5px 16px' }}
+      >
         Riesgo {level}
       </div>
     </div>

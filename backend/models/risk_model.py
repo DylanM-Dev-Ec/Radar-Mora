@@ -56,34 +56,63 @@ def _current_predict_all_stamp() -> tuple[float, float]:
 
 
 def _invalidate_predict_all_cache() -> None:
+    try:
+        from models.cobranza_priority import invalidate_priority_cache
+        invalidate_priority_cache()
+    except ImportError:
+        pass
+    try:
+        from models.statistical_risk_factors import invalidate_statistical_benchmarks
+        invalidate_statistical_benchmarks()
+    except ImportError:
+        pass
+
     global _predict_all_cache, _predict_all_cache_stamp
     _predict_all_cache = None
     _predict_all_cache_stamp = None
 
 
 def _get_connection():
-    """Obtiene conexión a la base de datos."""
-    conn = sqlite3.connect(DB_PATH, timeout=30.0)
-    conn.row_factory = sqlite3.Row
-    return conn
+    """Obtiene conexión a la base de datos (SQLite o Postgres/Supabase)."""
+    from database import DB_URL, connect_with_fallback
+    if DB_URL:
+        return connect_with_fallback(DB_URL)
+    else:
+        conn = sqlite3.connect(DB_PATH, timeout=30.0)
+        conn.row_factory = sqlite3.Row
+        return conn
 
 
 def _table_exists(name: str) -> bool:
     """Verifica si una tabla existe en la base de datos."""
+    from database import DB_URL
     conn = _get_connection()
     cursor = conn.cursor()
-    row = cursor.execute(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
-    ).fetchone()
-    conn.close()
-    return row is not None
+    if DB_URL:
+        try:
+            cursor.execute(
+                "SELECT 1 FROM information_schema.tables WHERE table_name=%s", (name,)
+            )
+            row = cursor.fetchone()
+            conn.close()
+            return row is not None
+        except Exception:
+            conn.close()
+            return False
+    else:
+        row = cursor.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
+        ).fetchone()
+        conn.close()
+        return row is not None
 
 
 def compute_features(socio_id: int = None) -> pd.DataFrame:
     """
-    Recupera las features de riesgo reales desde 'dataset_maestro' en SQLite,
+    Recupera las features de riesgo reales desde 'dataset_maestro' en SQLite/Postgres,
     agrupadas por cliente (socio_id) para garantizar la unicidad de registros.
     """
+    from database import DB_URL
     conn = _get_connection()
     
     if _table_exists("dataset_maestro"):
@@ -106,6 +135,8 @@ def compute_features(socio_id: int = None) -> pd.DataFrame:
                 WHERE cliente = ?
                 GROUP BY cliente
             """
+            if DB_URL:
+                query = query.replace('?', '%s')
             df = pd.read_sql_query(query, conn, params=(socio_id,))
         else:
             query = """
@@ -146,6 +177,8 @@ def compute_features(socio_id: int = None) -> pd.DataFrame:
                 FROM socios s
                 WHERE s.id = ?
             """
+            if DB_URL:
+                query = query.replace('?', '%s')
             df = pd.read_sql_query(query, conn, params=(socio_id,))
         else:
             query = """
@@ -174,8 +207,11 @@ def compute_features(socio_id: int = None) -> pd.DataFrame:
     # Reemplazar NaN en columnas
     df = df.fillna(0.0)
         
-    # Calcular feature de ingenieria adicional
-    df["ratio_ingreso_egreso"] = round(df["ingresos_socio"] / np.clip(df["egresos_socio"], 1.0, None), 4)
+    # Ratio acotado (evita valores absurdos p. ej. 50000 por egresos ~0 en maestro)
+    ing = df["ingresos_socio"].astype(float)
+    egr = df["egresos_socio"].astype(float)
+    denom = np.maximum(egr, np.maximum(ing * 0.15, 1.0))
+    df["ratio_ingreso_egreso"] = np.clip(ing / denom, 0.05, 5.0).round(2)
     
     # Asegurar el orden de las columnas de feature
     columns_ordered = ["socio_id"] + FEATURE_NAMES
@@ -199,7 +235,7 @@ def _assign_risk_labels(features_df: pd.DataFrame) -> pd.Series:
         dias_mora_df = pd.read_sql_query("""
             SELECT 
                 s.id as socio_id,
-                COALESCE((SELECT MAX(p.dias_atraso) FROM pagos p JOIN creditos c ON p.credito_id = c.id WHERE c.socio_id = s.id), 0) as dias_mora,
+                COALESCE((SELECT MIN(MAX(p.dias_atraso), 100) FROM pagos p JOIN creditos c ON p.credito_id = c.id WHERE c.socio_id = s.id), 0) as dias_mora,
                 CASE WHEN EXISTS(SELECT 1 FROM creditos c WHERE c.socio_id = s.id AND c.estado = 'Mora') THEN 1 ELSE 0 END as es_moroso
             FROM socios s
         """, conn)
@@ -212,7 +248,7 @@ def _assign_risk_labels(features_df: pd.DataFrame) -> pd.Series:
     for _, row in features_df.iterrows():
         sid = row["socio_id"]
         mora_info = mora_map.get(sid, {"dias_mora": 0, "es_moroso": 0})
-        dias_mora = mora_info["dias_mora"]
+        dias_mora = min(int(mora_info["dias_mora"] or 0), 100)
         
         score = 0
         
@@ -247,6 +283,19 @@ def _assign_risk_labels(features_df: pd.DataFrame) -> pd.Series:
             score += 8
         elif ratio < 1.1:
             score += 4
+
+        # 5. Segmentos estadísticos del panel extendido (mora por dimensión)
+        try:
+            from models.statistical_risk_factors import (
+                fetch_socio_statistical_profile,
+                compute_statistical_risk,
+                load_statistical_benchmarks,
+            )
+            prof = fetch_socio_statistical_profile(int(sid))
+            stat = compute_statistical_risk(prof, load_statistical_benchmarks())
+            score += int(min(22, stat["adjustment"] * 0.85))
+        except Exception:
+            pass
             
         # Clasificar con umbrales calibrados
         if score >= 63:
@@ -261,22 +310,384 @@ def _assign_risk_labels(features_df: pd.DataFrame) -> pd.Series:
     return pd.Series(labels)
 
 
-def _compute_risk_score(features_row: dict, model, feature_names: list) -> float:
+def fetch_mora_context_bulk() -> dict[int, dict]:
+    """Contexto de mora y cobro por socio (una sola consulta)."""
+    from database import execute_query, SQL_DIAS_ATRASO_CAP, cap_dias_atraso
+
+    rows = execute_query(f"""
+        SELECT
+            s.id as socio_id,
+            MAX(CASE WHEN c.estado = 'Mora' THEN 1 ELSE 0 END) as en_mora,
+            MAX(CASE WHEN p.estado = 'Atrasado' THEN {SQL_DIAS_ATRASO_CAP} ELSE 0 END) as dias_mora,
+            SUM(CASE WHEN p.estado = 'Atrasado' AND {SQL_DIAS_ATRASO_CAP} > 0 THEN 1 ELSE 0 END) as cuotas_atrasadas
+        FROM socios s
+        LEFT JOIN creditos c ON c.socio_id = s.id
+            AND c.estado IN ('Vigente', 'Mora', 'Reestructurado')
+        LEFT JOIN pagos p ON p.credito_id = c.id
+        WHERE s.estado = 'Activo'
+        GROUP BY s.id
+    """)
+    return {
+        r["socio_id"]: {
+            "en_mora": bool(r.get("en_mora")),
+            "dias_mora": cap_dias_atraso(r.get("dias_mora")),
+            "cuotas_atrasadas": int(r.get("cuotas_atrasadas") or 0),
+        }
+        for r in rows
+    }
+
+
+def _safe_ratio(row: pd.Series) -> float:
+    """Proporción ingresos/egresos entre 0.05 y 5 (legible en UI)."""
+    ing = float(row.get("ingresos_socio") or 0)
+    egr = float(row.get("egresos_socio") or 0)
+    if "ratio_ingreso_egreso" in row.index:
+        raw = float(row.get("ratio_ingreso_egreso") or 0)
+        if 0.05 <= raw <= 5.0:
+            return round(raw, 2)
+    denom = max(egr, ing * 0.15, 1.0)
+    return round(min(5.0, max(0.05, ing / denom)), 2)
+
+
+def _row_to_score_context(
+    row: pd.Series,
+    mora: dict,
+    socio_id: int | None = None,
+    statistical_profile: dict | None = None,
+    benchmarks: dict | None = None,
+) -> dict:
+    from models.statistical_risk_factors import enrich_score_context
+
+    ratio = _safe_ratio(row)
+    ctx = {
+        "dias_mora": mora.get("dias_mora", 0),
+        "cuotas_atrasadas": mora.get("cuotas_atrasadas", 0),
+        "en_mora": mora.get("en_mora", False),
+        "saldo_disponible": float(row.get("saldo_disponible") or 0),
+        "ratio_ingreso_egreso": ratio,
+        "alerta_critica_ia": int(row.get("alerta_critica_ia") or 0),
+        "alerta_retiro_ahorros": int(row.get("alerta_retiro_ahorros") or 0),
+        "alerta_caida_actividad": int(row.get("alerta_caida_actividad") or 0),
+        "nro_creditos": int(row.get("nro_creditos") or 0),
+        "nro_cargas_fam": int(row.get("nro_cargas_fam") or 0),
+        "num_transacciones": int(row.get("num_transacciones") or 0),
+        "volumen_total": float(row.get("volumen_total") or 0),
+        "cambio_saldo_ahorro": float(row.get("cambio_saldo_ahorro") or 0),
+        "ingresos_socio": float(row.get("ingresos_socio") or 0),
+        "egresos_socio": float(row.get("egresos_socio") or 0),
+    }
+    if socio_id is not None:
+        ctx = enrich_score_context(ctx, int(socio_id), statistical_profile, benchmarks=benchmarks)
+    return ctx
+
+
+def compute_explainable_score(ctx: dict) -> float:
     """
-    Calcula un score de riesgo continuo 0-100 basado en probabilidades del modelo.
+    Score 0-100 alineado con mora real. Techo efectivo ~94: el máximo es excepcional.
     """
-    X = np.array([[features_row[f] for f in feature_names]])
-    probas = model.predict_proba(X)[0]
-    classes = model.classes_
+    socio_id = int(ctx.get("socio_id") or 0)
+    dias = int(ctx.get("dias_mora") or 0)
+    cuotas = int(ctx.get("cuotas_atrasadas") or 0)
 
-    # Mapear a scores: Bajo=10, Medio=40, Alto=70, Crítico=95
-    class_scores = {"Bajo": 10, "Medio": 40, "Alto": 70, "Crítico": 95}
+    if dias == 0:
+        score = 8.0
+    elif dias <= 15:
+        score = 18.0 + dias * 1.15
+    elif dias <= 30:
+        score = 35.0 + (dias - 15) * 0.82
+    elif dias <= 60:
+        score = 47.0 + (dias - 30) * 0.52
+    elif dias <= 90:
+        score = 62.0 + (dias - 60) * 0.32
+    else:
+        score = 72.0 + min(dias - 90, 40) * 0.18
 
-    score = 0
-    for cls, prob in zip(classes, probas):
-        score += class_scores.get(cls, 50) * prob
+    if ctx.get("en_mora"):
+        score += 3.5
+    score += min(cuotas, 12) * 0.75
 
-    return round(min(100, max(0, score)), 1)
+    if ctx.get("alerta_critica_ia"):
+        score += 3.0
+    if ctx.get("alerta_retiro_ahorros"):
+        score += 2.0
+    if ctx.get("alerta_caida_actividad"):
+        score += 2.0
+
+    saldo = float(ctx.get("saldo_disponible") or 0)
+    if saldo < 10:
+        score += 2.5
+    elif saldo < 30:
+        score += 1.2
+
+    ratio = float(ctx.get("ratio_ingreso_egreso") or 1.0)
+    if ratio < 0.85:
+        score += 3.0
+    elif ratio < 1.0:
+        score += 1.5
+    elif dias == 0 and ratio >= 1.25:
+        score -= 5.0
+
+    if dias == 0 and not ctx.get("en_mora") and cuotas == 0:
+        score = min(score, 28.0)
+
+    stat_adj = float(ctx.get("statistical_adjustment") or 0)
+    if stat_adj > 0:
+        score += min(stat_adj, 12.0) * 0.7
+        if dias == 0 and not ctx.get("en_mora"):
+            score = max(score, 30.0 + stat_adj * 0.25)
+
+    raw = max(0.0, score)
+
+    # Dispersión en alto/crítico: evita que todos lleguen a 100
+    if raw >= 55 and socio_id:
+        band = (socio_id * 13 + dias * 3 + cuotas * 7) % 27
+        if raw >= 75:
+            raw = min(94.0, max(71.0, raw * 0.76 + 10.0 + band * 0.42))
+        else:
+            raw = min(79.0, max(54.0, raw * 0.84 + band * 0.38))
+    else:
+        raw = min(94.0, raw)
+
+    return round(raw, 1)
+
+
+def level_from_score(score: float) -> str:
+    if score >= 75:
+        return "Crítico"
+    if score >= 55:
+        return "Alto"
+    if score >= 35:
+        return "Medio"
+    return "Bajo"
+
+
+def build_explainable_factors(ctx: dict) -> list[dict]:
+    """Factores legibles para el asesor de cobranza."""
+    from database import cap_dias_display
+
+    dias_raw = int(ctx.get("dias_mora") or 0)
+    dias = cap_dias_display(dias_raw)
+    cuotas = int(ctx.get("cuotas_atrasadas") or 0)
+    factors = []
+
+    if dias_raw > 0:
+        imp = 0.45 if dias_raw >= 60 else (0.38 if dias_raw >= 30 else 0.30)
+        factors.append({
+            "name": "dias_mora",
+            "description": f"Días de mora: {dias} día(s) de atraso en cuotas",
+            "value": dias,
+            "importance": imp,
+            "impact": "negativo",
+        })
+    elif not ctx.get("en_mora") and cuotas == 0:
+        factors.append({
+            "name": "dias_mora",
+            "description": "Sin días de mora registrados al corte",
+            "value": 0,
+            "importance": 0.18,
+            "impact": "positivo",
+        })
+
+    if cuotas > 0:
+        factors.append({
+            "name": "cuotas_atrasadas",
+            "description": f"{cuotas} cuota(s) con estado atrasado",
+            "value": cuotas,
+            "importance": 0.22 if cuotas >= 3 else 0.16,
+            "impact": "negativo",
+        })
+
+    if ctx.get("en_mora"):
+        factors.append({
+            "name": "credito_en_mora",
+            "description": "Al menos un crédito en estado Mora",
+            "value": 1,
+            "importance": 0.20,
+            "impact": "negativo",
+        })
+
+    saldo = float(ctx.get("saldo_disponible") or 0)
+    if saldo < 30:
+        factors.append({
+            "name": "saldo_disponible",
+            "description": f"Saldo bajo en ahorros (${saldo:,.2f})",
+            "value": saldo,
+            "importance": 0.14,
+            "impact": "negativo",
+        })
+    elif saldo >= 200:
+        factors.append({
+            "name": "saldo_disponible",
+            "description": f"Saldo de ahorros saludable (${saldo:,.2f})",
+            "value": saldo,
+            "importance": 0.10,
+            "impact": "positivo",
+        })
+
+    ratio = float(ctx.get("ratio_ingreso_egreso") or 1.0)
+    tiene_problemas_pago = dias_raw > 0 or cuotas > 0 or ctx.get("en_mora")
+    if 0.05 <= ratio <= 5.0:
+        if ratio < 1.0:
+            factors.append({
+                "name": "ratio_ingreso_egreso",
+                "description": f"Ingresos no cubren egresos (ratio {ratio:.2f})",
+                "value": round(ratio, 2),
+                "importance": 0.15,
+                "impact": "negativo",
+            })
+        elif ratio >= 1.2 and not tiene_problemas_pago:
+            factors.append({
+                "name": "ratio_ingreso_egreso",
+                "description": f"Capacidad de pago favorable (ratio {ratio:.2f})",
+                "value": round(ratio, 2),
+                "importance": 0.10,
+                "impact": "positivo",
+            })
+
+    nro_creditos = int(ctx.get("nro_creditos") or 0)
+    if nro_creditos >= 3:
+        factors.append({
+            "name": "nro_creditos",
+            "description": f"{nro_creditos} operaciones de crédito previas (exposición acumulada)",
+            "value": nro_creditos,
+            "importance": 0.11 if nro_creditos >= 5 else 0.08,
+            "impact": "negativo" if nro_creditos >= 5 else "neutro",
+        })
+    elif nro_creditos == 1:
+        factors.append({
+            "name": "nro_creditos",
+            "description": "Primer crédito en la cooperativa",
+            "value": 1,
+            "importance": 0.06,
+            "impact": "neutro",
+        })
+
+    cargas = int(ctx.get("nro_cargas_fam") or 0)
+    if cargas >= 3:
+        factors.append({
+            "name": "nro_cargas_fam",
+            "description": f"{cargas} cargas familiares declaradas",
+            "value": cargas,
+            "importance": 0.09,
+            "impact": "negativo",
+        })
+    elif cargas == 0:
+        factors.append({
+            "name": "nro_cargas_fam",
+            "description": "Sin cargas familiares registradas",
+            "value": 0,
+            "importance": 0.05,
+            "impact": "positivo",
+        })
+
+    num_tx = int(ctx.get("num_transacciones") or 0)
+    if num_tx <= 2 and not tiene_problemas_pago:
+        factors.append({
+            "name": "num_transacciones",
+            "description": f"Baja actividad transaccional ({num_tx} movimientos)",
+            "value": num_tx,
+            "importance": 0.09,
+            "impact": "negativo",
+        })
+    elif num_tx >= 15:
+        factors.append({
+            "name": "num_transacciones",
+            "description": f"Alta rotación de cuenta ({num_tx} transacciones)",
+            "value": num_tx,
+            "importance": 0.07,
+            "impact": "positivo",
+        })
+
+    volumen = float(ctx.get("volumen_total") or 0)
+    if volumen >= 5000:
+        factors.append({
+            "name": "volumen_total",
+            "description": f"Volumen transaccional elevado (${volumen:,.0f})",
+            "value": volumen,
+            "importance": 0.08,
+            "impact": "positivo",
+        })
+    elif volumen > 0 and volumen < 400:
+        factors.append({
+            "name": "volumen_total",
+            "description": f"Volumen transaccional bajo (${volumen:,.0f})",
+            "value": volumen,
+            "importance": 0.08,
+            "impact": "negativo",
+        })
+
+    cambio = float(ctx.get("cambio_saldo_ahorro") or 0)
+    if cambio < -80:
+        factors.append({
+            "name": "cambio_saldo_ahorro",
+            "description": f"Caída fuerte del saldo de ahorros (${cambio:,.0f})",
+            "value": cambio,
+            "importance": 0.13,
+            "impact": "negativo",
+        })
+    elif cambio > 120:
+        factors.append({
+            "name": "cambio_saldo_ahorro",
+            "description": f"Incremento del ahorro (${cambio:,.0f})",
+            "value": cambio,
+            "importance": 0.07,
+            "impact": "positivo",
+        })
+
+    ingresos = float(ctx.get("ingresos_socio") or 0)
+    egresos = float(ctx.get("egresos_socio") or 0)
+    if ingresos >= 800:
+        factors.append({
+            "name": "ingresos_socio",
+            "description": f"Ingresos mensuales reportados (${ingresos:,.0f})",
+            "value": ingresos,
+            "importance": 0.07,
+            "impact": "positivo" if ratio >= 1.0 else "neutro",
+        })
+    if egresos >= 600 and ratio < 1.05:
+        factors.append({
+            "name": "egresos_socio",
+            "description": f"Egresos mensuales altos (${egresos:,.0f})",
+            "value": egresos,
+            "importance": 0.09,
+            "impact": "negativo",
+        })
+
+    if not tiene_problemas_pago:
+        if ctx.get("alerta_critica_ia"):
+            factors.append({
+                "name": "alerta_critica_ia",
+                "description": "Alerta crítica de comportamiento financiero",
+                "value": 1,
+                "importance": 0.12,
+                "impact": "negativo",
+            })
+        if ctx.get("alerta_retiro_ahorros"):
+            factors.append({
+                "name": "alerta_retiro_ahorros",
+                "description": "Retiros inusuales de ahorros",
+                "value": 1,
+                "importance": 0.10,
+                "impact": "negativo",
+            })
+        if ctx.get("alerta_caida_actividad"):
+            factors.append({
+                "name": "alerta_caida_actividad",
+                "description": "Caída de actividad en cuenta",
+                "value": 1,
+                "importance": 0.10,
+                "impact": "negativo",
+            })
+
+    stat_factors = [
+        sf for sf in (ctx.get("statistical_factors") or [])
+        if not str(sf.get("name", "")).startswith("stat_tipo_cartera")
+    ]
+    for sf in stat_factors:
+        factors.append(sf)
+
+    factors.sort(key=lambda x: x["importance"], reverse=True)
+    return factors[:14]
 
 
 def train_model() -> dict:
@@ -404,10 +815,7 @@ def _load_metadata() -> dict:
 
 
 def predict_risk(socio_id: int) -> dict:
-    """
-    Predice el riesgo para un socio específico.
-    """
-    model = _load_model()
+    """Score y factores explicables según mora y comportamiento de pago."""
     features_df = compute_features(socio_id)
 
     if features_df.empty:
@@ -415,62 +823,28 @@ def predict_risk(socio_id: int) -> dict:
             "risk_score": 0,
             "risk_level": "Sin datos",
             "feature_values": {},
-            "factors": []
+            "factors": [],
         }
 
+    mora_map = fetch_mora_context_bulk()
     row = features_df.iloc[0]
-    feature_values = {f: float(row[f]) for f in FEATURE_NAMES}
-
-    # Reemplazar NaN
-    for k in feature_values:
+    mora = mora_map.get(int(socio_id), {"dias_mora": 0, "cuotas_atrasadas": 0, "en_mora": False})
+    ctx = _row_to_score_context(row, mora, socio_id=int(socio_id))
+    risk_score = compute_explainable_score(ctx)
+    risk_level = level_from_score(risk_score)
+    feature_values = {f: float(row[f]) for f in FEATURE_NAMES if f in row.index}
+    for k in list(feature_values.keys()):
         if np.isnan(feature_values[k]) or np.isinf(feature_values[k]):
             feature_values[k] = 0.0
-
-    # Predicción
-    X = np.array([[feature_values[f] for f in FEATURE_NAMES]])
-    X = np.nan_to_num(X, nan=0.0, posinf=100.0, neginf=-100.0)
-    risk_level = model.predict(X)[0]
-    risk_score = _compute_risk_score(feature_values, model, FEATURE_NAMES)
-
-    # Calcular factores de impacto
-    importances = dict(zip(FEATURE_NAMES, model.feature_importances_))
-    factors = []
-    for fname in FEATURE_NAMES:
-        value = feature_values[fname]
-        importance = importances[fname]
-
-        # Determinar impacto cualitativo
-        if fname == "alerta_critica_ia":
-            impact = "negativo" if value == 1 else "positivo"
-        elif fname == "alerta_retiro_ahorros":
-            impact = "negativo" if value == 1 else "positivo"
-        elif fname == "alerta_caida_actividad":
-            impact = "negativo" if value == 1 else "positivo"
-        elif fname == "saldo_disponible":
-            impact = "positivo" if value > 100 else ("negativo" if value < 10 else "neutral")
-        elif fname == "ratio_ingreso_egreso":
-            impact = "positivo" if value >= 1.2 else ("negativo" if value < 0.9 else "neutral")
-        elif fname == "num_transacciones":
-            impact = "positivo" if value > 5 else "neutral"
-        else:
-            impact = "neutral"
-
-        factors.append({
-            "name": fname,
-            "value": round(value, 4),
-            "impact": impact,
-            "importance": round(importance, 4),
-            "description": FEATURE_DESCRIPTIONS.get(fname, fname),
-        })
-
-    # Ordenar por importancia
-    factors.sort(key=lambda x: x["importance"], reverse=True)
 
     return {
         "risk_score": risk_score,
         "risk_level": risk_level,
         "feature_values": feature_values,
-        "factors": factors,
+        "factors": build_explainable_factors(ctx),
+        "statistical_adjustment": ctx.get("statistical_adjustment", 0),
+        "statistical_segments": ctx.get("statistical_hits") or [],
+        "portfolio_avg_mora": ctx.get("portfolio_avg_mora"),
     }
 
 
@@ -492,7 +866,6 @@ def predict_all() -> list[dict]:
         if _predict_all_cache is not None and _predict_all_cache_stamp == cache_key:
             return _predict_all_cache
 
-        model = _load_model()
         features_df = compute_features()
 
         if features_df.empty:
@@ -500,36 +873,29 @@ def predict_all() -> list[dict]:
             _predict_all_cache_stamp = cache_key
             return []
 
-        # 1. Preparar matriz X completa de forma vectorial
-        X = features_df[FEATURE_NAMES].astype(float).values
-        X = np.nan_to_num(X, nan=0.0, posinf=100.0, neginf=-100.0)
+        from models.statistical_risk_factors import (
+            fetch_socio_profiles_bulk,
+            load_statistical_benchmarks,
+        )
 
-        # 2. Predecir todo en una sola llamada matricial
-        risk_levels = model.predict(X)
-        probas_all = model.predict_proba(X)
-        classes = model.classes_
-
-        # Mapear a scores: Bajo=10, Medio=40, Alto=70, Crítico=95
-        class_scores = {"Bajo": 10, "Medio": 40, "Alto": 70, "Crítico": 95}
-        class_weights = np.array([class_scores.get(cls, 50) for cls in classes])
-
-        # Producto matricial (dot product) para obtener todos los scores instantáneamente
-        risk_scores = probas_all.dot(class_weights)
-        risk_scores = np.clip(risk_scores, 0, 100).round(1)
-
-        # 3. Construir lista de resultados final de forma directa
-        results = [
-            {
-                "socio_id": int(sid),
-                "risk_score": float(score),
-                "risk_level": level,
-            }
-            for sid, score, level in zip(
-                features_df["socio_id"].values,
-                risk_scores,
-                risk_levels,
+        mora_map = fetch_mora_context_bulk()
+        benchmarks = load_statistical_benchmarks()
+        profiles = fetch_socio_profiles_bulk()
+        results = []
+        for _, row in features_df.iterrows():
+            sid = int(row["socio_id"])
+            mora = mora_map.get(sid, {"dias_mora": 0, "cuotas_atrasadas": 0, "en_mora": False})
+            ctx = _row_to_score_context(
+                row, mora, socio_id=sid,
+                statistical_profile=profiles.get(sid),
+                benchmarks=benchmarks,
             )
-        ]
+            score = compute_explainable_score(ctx)
+            results.append({
+                "socio_id": sid,
+                "risk_score": score,
+                "risk_level": level_from_score(score),
+            })
 
         _predict_all_cache = results
         _predict_all_cache_stamp = cache_key

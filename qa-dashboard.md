@@ -1,0 +1,527 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - img "Cooperativa de Ahorro y Crédito Tulcán Ltda." [ref=e7]
+        - generic [ref=e10]:
+          - generic [ref=e11]: Radar-Mora
+          - generic [ref=e12]: IA · Alertas tempranas
+      - navigation [ref=e13]:
+        - link "Panel de Riesgo" [ref=e14] [cursor=pointer]:
+          - /url: /
+          - img [ref=e15]
+          - text: Panel de Riesgo
+        - link "Perfil del Socio" [ref=e20] [cursor=pointer]:
+          - /url: /socios
+          - img [ref=e21]
+          - text: Perfil del Socio
+        - link "Alertas 625" [ref=e39] [cursor=pointer]:
+          - /url: /alertas
+          - img [ref=e27]
+          - text: Alertas
+          - generic "Socios con riesgo alto o crítico (Radar-Mora)" [ref=e40]: "625"
+        - link "Cobranza Preventiva 625" [ref=e41] [cursor=pointer]:
+          - /url: /cobranza-preventiva
+          - img [ref=e30]
+          - text: Cobranza Preventiva
+          - generic "Socios con cuota por vencer (acción preventiva)" [ref=e42]: "625"
+    - main [ref=e32]:
+      - generic [ref=e36]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - generic [ref=e46]: Cooperativa Tulcán · Carchi
+            - heading "Panel de Riesgo Crediticio" [level=1] [ref=e47]
+            - paragraph [ref=e48]:
+              - text: Vista consolidada de cartera, morosidad y alertas del motor
+              - strong [ref=e49]: Radar-Mora
+              - text: . Datos actualizados para gestión proactiva con socios.
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - generic [ref=e52]: 2.1%
+              - generic [ref=e53]: Casos prioritarios (semana)
+            - generic [ref=e54]:
+              - generic [ref=e55]: "625"
+              - generic [ref=e56]: Alertas activas (alto + crítico)
+            - link "Ver alertas" [ref=e57] [cursor=pointer]:
+              - /url: /alertas
+              - text: Ver alertas
+              - img [ref=e58]
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - img [ref=e62]
+            - generic [ref=e66]:
+              - heading "Resumen ejecutivo" [level=2] [ref=e67]
+              - paragraph [ref=e68]: Indicadores clave de la cooperativa al día de hoy
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - img [ref=e72]
+              - generic [ref=e77]:
+                - generic [ref=e78]: "29.821"
+                - generic [ref=e79]: Socios activos
+            - generic [ref=e80]:
+              - img [ref=e82]
+              - generic [ref=e84]:
+                - generic [ref=e85]: "32.088"
+                - generic [ref=e86]: Créditos vigentes
+            - generic [ref=e87]:
+              - img [ref=e89]
+              - generic [ref=e91]:
+                - generic [ref=e92]: $408.6M
+                - generic [ref=e93]: Cartera colocada
+            - generic [ref=e94]:
+              - img [ref=e96]
+              - generic [ref=e98]:
+                - generic [ref=e99]: 21.4%
+                - generic [ref=e100]: Tasa de morosidad
+            - generic [ref=e101]:
+              - img [ref=e103]
+              - generic [ref=e105]:
+                - generic [ref=e106]: "543"
+                - generic [ref=e107]: Riesgo alto (gestión)
+            - generic [ref=e108]:
+              - img [ref=e110]
+              - generic [ref=e112]:
+                - generic [ref=e113]: "82"
+                - generic [ref=e114]: Riesgo crítico (gestión)
+            - generic [ref=e115]:
+              - img [ref=e117]
+              - generic [ref=e119]:
+                - generic [ref=e120]: $9.8M
+                - generic [ref=e121]: Exposición en riesgo
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - img [ref=e124]
+            - generic [ref=e127]:
+              - heading "Alertas prioritarias" [level=2] [ref=e128]
+              - paragraph [ref=e129]: Casos con mayor score de mora para contacto inmediato · Radar-Mora
+            - link "Ver cola completa (625)" [ref=e130] [cursor=pointer]:
+              - /url: /alertas
+              - text: Ver cola completa (625)
+              - img [ref=e131]
+          - generic [ref=e134]:
+            - 'link "SOCIO 512952 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 25 cuota(s) atrasa… 2026-05-21 · Nivel: Crítico 100" [ref=e135] [cursor=pointer]':
+              - /url: /socios/512952
+              - img [ref=e137]
+              - generic [ref=e139]:
+                - generic [ref=e140]: SOCIO 512952
+                - generic [ref=e141]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 25 cuota(s) atrasa…
+                - generic [ref=e142]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e143]: "100"
+            - 'link "SOCIO 1044917 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 12 cuota(s) atrasa… 2026-05-21 · Nivel: Crítico 100" [ref=e144] [cursor=pointer]':
+              - /url: /socios/1044917
+              - img [ref=e146]
+              - generic [ref=e148]:
+                - generic [ref=e149]: SOCIO 1044917
+                - generic [ref=e150]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 12 cuota(s) atrasa…
+                - generic [ref=e151]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e152]: "100"
+            - 'link "SOCIO 1695917 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 18 cuota(s) atrasa… 2026-05-21 · Nivel: Crítico 100" [ref=e153] [cursor=pointer]':
+              - /url: /socios/1695917
+              - img [ref=e155]
+              - generic [ref=e157]:
+                - generic [ref=e158]: SOCIO 1695917
+                - generic [ref=e159]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 18 cuota(s) atrasa…
+                - generic [ref=e160]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e161]: "100"
+            - 'link "SOCIO 1854502 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 14 cuota(s) atrasa… 2026-05-21 · Nivel: Crítico 100" [ref=e162] [cursor=pointer]':
+              - /url: /socios/1854502
+              - img [ref=e164]
+              - generic [ref=e166]:
+                - generic [ref=e167]: SOCIO 1854502
+                - generic [ref=e168]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 14 cuota(s) atrasa…
+                - generic [ref=e169]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e170]: "100"
+            - 'link "SOCIO 935927 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 10 cuota(s) atrasa… 2026-05-21 · Nivel: Crítico 100" [ref=e171] [cursor=pointer]':
+              - /url: /socios/935927
+              - img [ref=e173]
+              - generic [ref=e175]:
+                - generic [ref=e176]: SOCIO 935927
+                - generic [ref=e177]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 10 cuota(s) atrasa…
+                - generic [ref=e178]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e179]: "100"
+            - 'link "SOCIO 2031595 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 9 cuota(s) atrasad… 2026-05-21 · Nivel: Crítico 100" [ref=e180] [cursor=pointer]':
+              - /url: /socios/2031595
+              - img [ref=e182]
+              - generic [ref=e184]:
+                - generic [ref=e185]: SOCIO 2031595
+                - generic [ref=e186]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 9 cuota(s) atrasad…
+                - generic [ref=e187]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e188]: "100"
+            - 'link "SOCIO 2012086 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 7 cuota(s) atrasad… 2026-05-21 · Nivel: Crítico 100" [ref=e189] [cursor=pointer]':
+              - /url: /socios/2012086
+              - img [ref=e191]
+              - generic [ref=e193]:
+                - generic [ref=e194]: SOCIO 2012086
+                - generic [ref=e195]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 7 cuota(s) atrasad…
+                - generic [ref=e196]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e197]: "100"
+            - 'link "SOCIO 960833 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 6 cuota(s) atrasad… 2026-05-21 · Nivel: Crítico 100" [ref=e198] [cursor=pointer]':
+              - /url: /socios/960833
+              - img [ref=e200]
+              - generic [ref=e202]:
+                - generic [ref=e203]: SOCIO 960833
+                - generic [ref=e204]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 6 cuota(s) atrasad…
+                - generic [ref=e205]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e206]: "100"
+            - 'link "SOCIO 56566 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 5 cuota(s) atrasad… 2026-05-21 · Nivel: Crítico 100" [ref=e207] [cursor=pointer]':
+              - /url: /socios/56566
+              - img [ref=e209]
+              - generic [ref=e211]:
+                - generic [ref=e212]: SOCIO 56566
+                - generic [ref=e213]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 5 cuota(s) atrasad…
+                - generic [ref=e214]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e215]: "100"
+            - 'link "SOCIO 1281769 Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 5 cuota(s) atrasad… 2026-05-21 · Nivel: Crítico 100" [ref=e216] [cursor=pointer]':
+              - /url: /socios/1281769
+              - img [ref=e218]
+              - generic [ref=e220]:
+                - generic [ref=e221]: SOCIO 1281769
+                - generic [ref=e222]: Cobranza urgente · Clasificación Crítico por Radar-Mora (score 100.0). 5 cuota(s) atrasad…
+                - generic [ref=e223]: "2026-05-21 · Nivel: Crítico"
+              - generic [ref=e224]: "100"
+        - generic [ref=e226]:
+          - generic [ref=e227]: Composición de riesgo en cartera (cola de gestión)
+          - generic [ref=e228]:
+            - 'generic "Bajo: 25714 (86.2%)" [ref=e229]':
+              - generic [ref=e230]: Bajo
+            - 'generic "Medio: 3482 (11.7%)" [ref=e231]':
+              - generic [ref=e232]: Medio
+            - 'generic "Alto: 543 (1.8%)" [ref=e233]'
+            - 'generic "Crítico: 82 (0.3%)" [ref=e234]'
+          - generic [ref=e235]:
+            - generic [ref=e236]:
+              - text: "Bajo:"
+              - strong [ref=e238]: "25714"
+              - text: (86.2%)
+            - generic [ref=e239]:
+              - text: "Medio:"
+              - strong [ref=e241]: "3482"
+              - text: (11.7%)
+            - generic [ref=e242]:
+              - text: "Alto:"
+              - strong [ref=e244]: "543"
+              - text: (1.8%)
+            - generic [ref=e245]:
+              - text: "Crítico:"
+              - strong [ref=e247]: "82"
+              - text: (0.3%)
+        - generic [ref=e248]:
+          - generic [ref=e249]:
+            - img [ref=e250]
+            - generic [ref=e253]:
+              - heading "Análisis de cartera" [level=2] [ref=e254]
+              - paragraph [ref=e255]: Distribución por nivel de riesgo y por agencia
+          - generic [ref=e256]:
+            - generic [ref=e257]:
+              - generic [ref=e259]:
+                - generic [ref=e260]: Distribución por nivel
+                - generic [ref=e261]: Clasificación del modelo de IA
+              - generic [ref=e263]:
+                - img [ref=e264]:
+                  - generic [ref=e265]:
+                    - generic [ref=e266]:
+                      - img [ref=e268]
+                      - img [ref=e270]
+                      - img [ref=e272]
+                      - img [ref=e274]
+                    - generic [ref=e275]:
+                      - generic [ref=e276]:
+                        - generic: 86%
+                      - generic [ref=e277]:
+                        - generic: 12%
+                - list [ref=e279]:
+                  - listitem [ref=e280]:
+                    - generic [ref=e282]: Bajo
+                    - generic [ref=e283]: 86.2%
+                    - generic [ref=e284]: (25714)
+                  - listitem [ref=e285]:
+                    - generic [ref=e287]: Medio
+                    - generic [ref=e288]: 11.7%
+                    - generic [ref=e289]: (3482)
+                  - listitem [ref=e290]:
+                    - generic [ref=e292]: Alto
+                    - generic [ref=e293]: 1.8%
+                    - generic [ref=e294]: (543)
+                  - listitem [ref=e295]:
+                    - generic [ref=e297]: Crítico
+                    - generic [ref=e298]: 0.3%
+                    - generic [ref=e299]: (82)
+            - generic [ref=e300]:
+              - generic [ref=e303]: Riesgo por agencia
+              - generic [ref=e305]:
+                - img [ref=e306]:
+                  - generic [ref=e311]:
+                    - generic [ref=e313]: "0"
+                    - generic [ref=e315]: "2000"
+                    - generic [ref=e317]: "4000"
+                    - generic [ref=e319]: "6000"
+                    - generic [ref=e321]: "8000"
+                  - generic [ref=e323]:
+                    - generic [ref=e325]: Ambato
+                    - generic [ref=e327]: Cayambe
+                    - generic [ref=e329]: El Ángel
+                    - generic [ref=e331]: Guaranda
+                    - generic [ref=e333]: Huaca
+                    - generic [ref=e335]: Ibarra
+                    - generic [ref=e337]: Julio Andrade
+                    - generic [ref=e339]: Latacunga
+                    - generic [ref=e341]: Otavalo
+                    - generic [ref=e343]: Quito
+                    - generic [ref=e345]: Quito Norte
+                    - generic [ref=e347]: Quito Sur
+                    - generic [ref=e349]: Riobamba
+                    - generic [ref=e351]: San Gabriel
+                    - generic [ref=e353]: Sangolquí
+                    - generic [ref=e355]: Tulcán (Matriz)
+                - list [ref=e493]:
+                  - listitem [ref=e494]:
+                    - img [ref=e495]
+                    - text: Bajo
+                  - listitem [ref=e497]:
+                    - img [ref=e498]
+                    - text: Medio
+                  - listitem [ref=e500]:
+                    - img [ref=e501]
+                    - text: Alto
+                  - listitem [ref=e503]:
+                    - img [ref=e504]
+                    - text: Crítico
+        - generic [ref=e506]:
+          - generic [ref=e507]:
+            - img [ref=e508]
+            - generic [ref=e510]:
+              - heading "Tendencia de morosidad" [level=2] [ref=e511]
+              - paragraph [ref=e512]: Evolución de la cartera en los últimos 12 meses
+          - img [ref=e516]:
+            - generic [ref=e521]:
+              - generic [ref=e523]: 2025-06
+              - generic [ref=e525]: 2025-07
+              - generic [ref=e527]: 2025-08
+              - generic [ref=e529]: 2025-09
+              - generic [ref=e531]: 2025-10
+              - generic [ref=e533]: 2025-11
+              - generic [ref=e535]: 2025-12
+              - generic [ref=e537]: 2026-01
+              - generic [ref=e539]: 2026-02
+              - generic [ref=e541]: 2026-03
+              - generic [ref=e543]: 2026-04
+              - generic [ref=e545]: 2026-05
+            - generic [ref=e547]:
+              - generic [ref=e549]: 0%
+              - generic [ref=e551]: 5%
+              - generic [ref=e553]: 10%
+              - generic [ref=e555]: 15%
+              - generic [ref=e557]: 20%
+        - generic [ref=e577]:
+          - generic [ref=e578]:
+            - img [ref=e579]
+            - generic [ref=e582]:
+              - heading "Estadísticas avanzadas de cartera" [level=2] [ref=e583]
+              - paragraph [ref=e584]:
+                - text: Portafolio, perfil demográfico y comportamiento crediticio ·
+                - generic [ref=e585]: Cartera sintética (demo)
+          - generic [ref=e586]:
+            - button "Portafolio y Geografía" [ref=e587] [cursor=pointer]:
+              - img [ref=e588]
+              - text: Portafolio y Geografía
+            - button "Perfil Demográfico" [ref=e591] [cursor=pointer]:
+              - img [ref=e592]
+              - text: Perfil Demográfico
+            - button "Comportamiento Crediticio" [ref=e597] [cursor=pointer]:
+              - img [ref=e598]
+              - text: Comportamiento Crediticio
+          - generic [ref=e600]:
+            - generic [ref=e601]:
+              - generic [ref=e602]:
+                - generic [ref=e603]:
+                  - generic [ref=e604]:
+                    - generic [ref=e605]: Mora por Tipo de Crédito
+                    - generic [ref=e606]: Volumen de mora y tasa de morosidad por cartera
+                  - img [ref=e607]
+                - generic [ref=e610]:
+                  - img [ref=e611]:
+                    - generic [ref=e616]:
+                      - generic [ref=e618]: Consumo
+                      - generic [ref=e620]: Consumo Reestructurado
+                      - generic [ref=e622]: Microcredito Liquidacion
+                    - generic [ref=e624]:
+                      - generic [ref=e626]: $0
+                      - generic [ref=e628]: $8.0M
+                      - generic [ref=e630]: $16.0M
+                      - generic [ref=e632]: $24.0M
+                      - generic [ref=e634]: $32.0M
+                    - generic [ref=e636]:
+                      - generic [ref=e638]: 0%
+                      - generic [ref=e640]: 25%
+                      - generic [ref=e642]: 50%
+                      - generic [ref=e644]: 75%
+                      - generic [ref=e646]: 100%
+                  - list [ref=e694]:
+                    - listitem [ref=e695]:
+                      - img [ref=e696]
+                      - generic [ref=e698]: Monto en Mora ($)
+                    - listitem [ref=e699]:
+                      - img [ref=e700]
+                      - generic [ref=e702]: Tasa de Mora (%)
+              - generic [ref=e703]:
+                - generic [ref=e704]:
+                  - generic [ref=e705]:
+                    - generic [ref=e706]: Mora por Zona Geográfica
+                    - generic [ref=e707]: Análisis de morosidad y saldo en mora por región
+                  - img [ref=e708]
+                - generic [ref=e712]:
+                  - img [ref=e713]:
+                    - generic [ref=e718]:
+                      - generic [ref=e720]: Carchi
+                      - generic [ref=e722]: Pichincha
+                      - generic [ref=e724]: Imbabura
+                      - generic [ref=e726]: Sierra Centro
+                    - generic [ref=e728]:
+                      - generic [ref=e730]: $0
+                      - generic [ref=e732]: $15.0M
+                      - generic [ref=e734]: $30.0M
+                      - generic [ref=e736]: $45.0M
+                      - generic [ref=e738]: $60.0M
+                    - generic [ref=e740]:
+                      - generic [ref=e742]: 0%
+                      - generic [ref=e744]: 6%
+                      - generic [ref=e746]: 12%
+                      - generic [ref=e748]: 18%
+                      - generic [ref=e750]: 24%
+                  - list [ref=e774]:
+                    - listitem [ref=e775]:
+                      - img [ref=e776]
+                      - generic [ref=e778]: Monto en Mora ($)
+                    - listitem [ref=e779]:
+                      - img [ref=e780]
+                      - generic [ref=e782]: Tasa de Mora (%)
+              - generic [ref=e783]:
+                - generic [ref=e784]:
+                  - generic [ref=e785]:
+                    - generic [ref=e786]: Mora por Rango de Monto
+                    - generic [ref=e787]: Análisis de morosidad según el volumen del crédito otorgado
+                  - img [ref=e788]
+                - img [ref=e792]:
+                  - generic [ref=e797]:
+                    - generic [ref=e799]: 0 - 5K
+                    - generic [ref=e801]: 5K - 10K
+                    - generic [ref=e803]: 10K - 25K
+                    - generic [ref=e805]: 25K+
+                  - generic [ref=e807]:
+                    - generic [ref=e809]: 0%
+                    - generic [ref=e811]: 7%
+                    - generic [ref=e813]: 14%
+                    - generic [ref=e815]: 21%
+                    - generic [ref=e817]: 28%
+            - generic [ref=e829]:
+              - generic [ref=e830]:
+                - generic [ref=e831]:
+                  - generic [ref=e832]:
+                    - generic [ref=e833]:
+                      - generic [ref=e834]: Top 5 Actividades con Mayor Exposición
+                      - generic [ref=e835]: Sectores económicos clave con mayor número de operaciones activas
+                    - img [ref=e836]
+                  - table [ref=e840]:
+                    - rowgroup [ref=e841]:
+                      - row "Actividad Económica ↕ Total Ops ↕ Cartera Total ▼ Ops en Mora ↕ Tasa Morosidad ↕" [ref=e842]:
+                        - columnheader "Actividad Económica ↕" [ref=e843] [cursor=pointer]:
+                          - generic [ref=e844]:
+                            - text: Actividad Económica
+                            - generic [ref=e845]: ↕
+                        - columnheader "Total Ops ↕" [ref=e846] [cursor=pointer]:
+                          - generic [ref=e847]:
+                            - text: Total Ops
+                            - generic [ref=e848]: ↕
+                        - columnheader "Cartera Total ▼" [ref=e849] [cursor=pointer]:
+                          - generic [ref=e850]:
+                            - text: Cartera Total
+                            - generic [ref=e851]: ▼
+                        - columnheader "Ops en Mora ↕" [ref=e852] [cursor=pointer]:
+                          - generic [ref=e853]:
+                            - text: Ops en Mora
+                            - generic [ref=e854]: ↕
+                        - columnheader "Tasa Morosidad ↕" [ref=e855] [cursor=pointer]:
+                          - generic [ref=e856]:
+                            - text: Tasa Morosidad
+                            - generic [ref=e857]: ↕
+                    - rowgroup [ref=e858]:
+                      - row "Producción De Leche Cruda De Vaca 1.936 $27.8M 291 13.01%" [ref=e859]:
+                        - cell "Producción De Leche Cruda De Vaca" [ref=e860]
+                        - cell "1.936" [ref=e861]
+                        - cell "$27.8M" [ref=e862]
+                        - cell "291" [ref=e863]
+                        - cell "13.01%" [ref=e864]:
+                          - generic [ref=e868]: 13.01%
+                      - row "Todas Las Actividades De Transporte De Carga Po... 1.290 $20.5M 244 18.72%" [ref=e869]:
+                        - cell "Todas Las Actividades De Transporte De Carga Po..." [ref=e870]
+                        - cell "1.290" [ref=e871]
+                        - cell "$20.5M" [ref=e872]
+                        - cell "244" [ref=e873]
+                        - cell "18.72%" [ref=e874]:
+                          - generic [ref=e878]: 18.72%
+                      - row "Cultivo De Papa 1.171 $12.2M 161 11.08%" [ref=e879]:
+                        - cell "Cultivo De Papa" [ref=e880]
+                        - cell "1.171" [ref=e881]
+                        - cell "$12.2M" [ref=e882]
+                        - cell "161" [ref=e883]
+                        - cell "11.08%" [ref=e884]:
+                          - generic [ref=e888]: 11.08%
+                      - row "Servicios De Taxis 947 $11.8M 227 20.8%" [ref=e889]:
+                        - cell "Servicios De Taxis" [ref=e890]
+                        - cell "947" [ref=e891]
+                        - cell "$11.8M" [ref=e892]
+                        - cell "227" [ref=e893]
+                        - cell "20.8%" [ref=e894]:
+                          - generic [ref=e898]: 20.8%
+                      - row "Transporte Terrestre De Pasajeros Por Sistemas ... 694 $11.0M 213 26.21%" [ref=e899]:
+                        - cell "Transporte Terrestre De Pasajeros Por Sistemas ..." [ref=e900]
+                        - cell "694" [ref=e901]
+                        - cell "$11.0M" [ref=e902]
+                        - cell "213" [ref=e903]
+                        - cell "26.21%" [ref=e904]:
+                          - generic [ref=e908]: 26.21%
+                - button "Ver Todas (59 Actividades)" [ref=e910]
+              - generic [ref=e911]:
+                - generic [ref=e912]:
+                  - generic [ref=e913]:
+                    - generic [ref=e914]:
+                      - generic [ref=e915]: Distribución por Género
+                      - generic [ref=e916]: Comportamiento e impacto de la cartera por sexo del socio
+                    - img [ref=e917]
+                  - generic [ref=e920]:
+                    - generic [ref=e921]:
+                      - generic [ref=e922]:
+                        - generic [ref=e923]:
+                          - generic [ref=e924]: ♀
+                          - generic [ref=e925]:
+                            - generic [ref=e926]: Femenino
+                            - generic [ref=e927]: 14.737 operaciones
+                        - generic [ref=e928]:
+                          - generic [ref=e929]: $181.4M
+                          - generic [ref=e930]: Monto colocado
+                      - generic [ref=e932]:
+                        - generic [ref=e933]:
+                          - text: "Ops en Mora:"
+                          - strong [ref=e934]: "3.006"
+                        - generic [ref=e935]: "Tasa Mora: 17.15%"
+                    - generic [ref=e938]:
+                      - generic [ref=e939]:
+                        - generic [ref=e940]:
+                          - generic [ref=e941]: ♂
+                          - generic [ref=e942]:
+                            - generic [ref=e943]: Masculino
+                            - generic [ref=e944]: 17.351 operaciones
+                        - generic [ref=e945]:
+                          - generic [ref=e946]: $227.2M
+                          - generic [ref=e947]: Monto colocado
+                      - generic [ref=e949]:
+                        - generic [ref=e950]:
+                          - text: "Ops en Mora:"
+                          - strong [ref=e951]: "3.874"
+                        - generic [ref=e952]: "Tasa Mora: 18.39%"
+                - generic [ref=e955]:
+                  - generic [ref=e956]: ✨
+                  - generic [ref=e957]:
+                    - strong [ref=e958]: "Nota de Riesgo:"
+                    - text: La cartera femenina presenta excelente comportamiento en pagos y menor tasa de mora en general.
+  - generic [ref=e959]: 7%

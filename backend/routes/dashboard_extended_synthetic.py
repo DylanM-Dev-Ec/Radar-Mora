@@ -2,6 +2,7 @@
 Estadísticas extendidas calculadas desde socios/créditos/pagos (sin dataset_maestro).
 """
 from database import execute_query
+from chart_series import enrich_mora_rango_series
 
 
 def _rates(total_ops: int, mora_ops: int, total_monto: float, mora_monto: float) -> tuple[float, float]:
@@ -109,6 +110,7 @@ def get_extended_stats_synthetic() -> dict:
         })
     orden = {"0 - 5K": 1, "5K - 10K": 2, "10K - 25K": 3, "25K+": 4}
     mora_por_rango_monto.sort(key=lambda x: orden.get(x["rango"], 99))
+    mora_por_rango_monto = enrich_mora_rango_series(mora_por_rango_monto)
 
     mora_por_zona = []
     for r in execute_query("""

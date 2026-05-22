@@ -1,43 +1,85 @@
-# 🏦 CoopTech Tulcán - Sistema de Riesgo Crediticio e IA de Alertas Tempranas
+# 🏦 Radar Mora — CoopTech Tulcán
 
-¡Bienvenido al proyecto de la hackathon! Este repositorio contiene la implementación completa para la **Cooperativa de Ahorro y Crédito Tulcán**, diseñada para perfilar el comportamiento transaccional y predecir el riesgo de morosidad mediante Inteligencia Artificial (Machine Learning).
+Sistema de perfilamiento de riesgo crediticio y cobranza preventiva para la **Cooperativa de Ahorro y Crédito Tulcán**, con predicción de morosidad mediante Machine Learning.
 
-El proyecto está diseñado para funcionar de manera **100% autónoma y local**, garantizando estabilidad y velocidad durante la presentación y demo en vivo frente al jurado.
+Puede ejecutarse **en local** (SQLite + FastAPI + React) o en **modo presentación** para demo sin backend.
 
 ---
 
-## 📁 Estructura General del Proyecto
-
-El código está organizado de manera limpia y modular en dos directorios principales:
+## 📁 Estructura del proyecto
 
 ```text
 cooptech-deviaton/
-├── backend/                    # Motor de IA y API (Python)
-│   ├── main.py                 # Punto de entrada de la API FastAPI y CORS
-│   ├── database.py             # Helpers de base de datos SQLite y esquemas
-│   ├── start.py                # Script de inicio automatizado (Base de datos + ML + Servidor)
-│   ├── requirements.txt        # Dependencias de Python
+├── backend/
+│   ├── main.py                 # API FastAPI
+│   ├── database.py             # SQLite / helpers
+│   ├── start.py                # DB + modelo + servidor
 │   ├── models/
-│   │   ├── data_generator.py   # Generador inteligente de datos sintéticos realistas ecuatorianos
-│   │   └── risk_model.py       # Modelo de Machine Learning (Random Forest de Scikit-learn)
+│   │   ├── risk_model.py       # Modelo de riesgo
+│   │   ├── preventive_cache.py # Cola cobranza preventiva
+│   │   └── cobranza_priority.py
 │   └── routes/
-│       ├── dashboard.py        # Endpoints para métricas generales y gráficos
-│       ├── socios.py           # Gestión y perfilamiento detallado de los socios
-│       └── alerts.py           # Motor de Alertas Tempranas y predicciones
-│
-└── frontend/                   # Interfaz de Usuario y Dashboard (Vite + React)
-    ├── package.json            # Dependencias del frontend (React, Recharts, Lucide, Vite)
-    ├── vite.config.js          # Configuración de compilación rápida
-    ├── index.html              # Plantilla HTML base con fuentes premium (Inter)
-    └── src/
-        ├── main.jsx            # Entrada de renderizado de React
-        ├── App.jsx             # Enrutador y estructura base de la UI
-        ├── index.css           # Estilos personalizados (Glassmorphism, Dark mode)
-        ├── services/
-        │   └── api.js          # Cliente API integrado con Axios/Fetch
-        └── components/
-            ├── Sidebar.jsx     # Panel de navegación lateral responsive
-            ├── Dashboard.jsx   # Pantalla principal (Vista Ejecutiva, KPIs y Gráficos)
-            ├── SociosList.jsx  # Explorador interactivo con filtros avanzados
-            ├── SocioProfile.jsx# Perfil de socio con radar, análisis transaccional e importancia de features
-            └── RiskGauge.jsx   # Indicador visual animado del Score de Riesgo (Velocímetro HSL)
+│       ├── dashboard.py
+│       ├── socios.py
+│       └── alerts.py
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   │   ├── Dashboard.jsx
+    │   │   ├── PreventiveCollectionPanel.jsx
+    │   │   ├── SocioProfile.jsx
+    │   │   └── RiskGauge.jsx
+    │   └── services/api.js
+    └── vercel.json
+```
+
+---
+
+## 🏆 Modo presentación (hackathon)
+
+Sin depender del backend en vivo:
+
+```bash
+cd frontend
+npm run dev:pitch
+```
+
+Abre **http://localhost:5173/** — guion en [`docs/HACKATHON_PITCH.md`](docs/HACKATHON_PITCH.md).
+
+---
+
+## 🚀 Inicio rápido (local)
+
+### Backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+python start.py
+```
+
+API: **http://localhost:8000** · Docs: **http://localhost:8000/docs**
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+UI: **http://localhost:5173**
+
+---
+
+## 💡 Demo sugerida
+
+1. **Panel de riesgo** — distribución alto/crítico y cola semanal.
+2. **Cobranza preventiva** — cuotas que vencen en 3–15 días desde la fecha de corte.
+3. **Perfil del socio** — score, factores explicables y panel de reestructuración (alto/crítico).
+
+---
+
+## 🔗 Repositorio
+
+[GitHub — Radar-Mora](https://github.com/CristopherLomas/Radar-Mora)

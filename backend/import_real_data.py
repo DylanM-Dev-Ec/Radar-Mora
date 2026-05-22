@@ -395,7 +395,7 @@ def main():
                     estado_pago = "Atrasado"
                     fecha_pago_str = None
                     monto_pagado = 0.0
-                    atraso = dias_mora
+                    atraso = min(max(0, (proc_date.date() - fecha_esp.date()).days), 100)
                 else:
                     estado_pago = "Pagado"
                     # Pequeña variación realista en fecha de pago
@@ -412,6 +412,11 @@ def main():
                 fecha_pago_str = None
                 monto_pagado = 0.0
                 atraso = 0
+                # Próxima cuota: ventana preventiva 3–15 días desde corte (2026-05-21)
+                if cuota_idx == elapsed_months + 1:
+                    offset_dias = 3 + (cliente_id % 13)
+                    fecha_esp = proc_date + timedelta(days=offset_dias)
+                    fecha_esp_str = fecha_esp.strftime("%Y-%m-%d")
 
             pagos_to_insert.append((
                 op_id, cuota_idx, fecha_esp_str, fecha_pago_str, cuota_mensual, monto_pagado, atraso, estado_pago, None

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Users, CreditCard, DollarSign, TrendingUp, Briefcase, User,
-  GraduationCap, Home, Calendar, Globe, Award, Heart,
+  GraduationCap, Home, Calendar, Award, Heart,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area,
@@ -589,34 +589,6 @@ className="btn-coop-secondary toggle-stats-btn"
             </div>
           </div>
 
-          {/* Tarjeta Informativa de Nacionalidad y Geolocalización Cantonal */}
-          <div className="card animate-in" style={{ marginTop: 24, padding: 0 }}>
-            <div className="nationality-card">
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                <div style={{ 
-                  background: 'rgba(99,102,241,0.12)', 
-                  color: 'var(--accent-light)', 
-                  width: 48, 
-                  height: 48, 
-                  borderRadius: 12, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <Globe size={24} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--coop-texto-principal)', marginBottom: 4 }}>
-                    Análisis de Nacionalidad y Geolocalización Cantonal (DINARDAP)
-                  </h3>
-                  <p style={{ fontSize: 13, color: 'var(--coop-texto-secundario)', lineHeight: 1.5 }}>
-                    La cartera de la cooperativa se compone en un **100% de socios de nacionalidad ecuatoriana**, dado su enfoque de desarrollo y ahorro comunitario en la Sierra Norte. El análisis espacial profundo se realiza mediante el código cantonal de origen registrado de forma segura desde la base de datos de DINARDAP (columna `cidudad_orig`), donde cantones clave como **Tulcán (Carchi)** con 7,829 socios, **Ibarra (Imbabura)** con 3,931 socios y **Quito (Pichincha)** con 3,248 socios concentran la mayor densidad y flujo transaccional.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 

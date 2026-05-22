@@ -1,4 +1,4 @@
-/** Marca Cooperativa Tulcán + Radar-Mora */
+/** Marca Cooperativa Tulcán + Radar Mora */
 
 const COOP_LOGO = '/images/coop-tulcan-logo.png';
 
@@ -19,8 +19,8 @@ export function BrandLockup({ variant = 'header' }) {
         <CoopLogoImage className="brand-coop-logo--sidebar" />
         <div className="brand-lockup-divider brand-lockup-divider--v" aria-hidden />
         <div className="brand-lockup-text">
-          <span className="brand-lockup-radar">Radar-Mora</span>
-          <span className="brand-lockup-coop">Alertas tempranas</span>
+          <span className="brand-lockup-radar">Radar Mora</span>
+          <span className="brand-lockup-coop">Cooperativa Tulcán</span>
         </div>
       </div>
     );
@@ -32,8 +32,7 @@ export function BrandLockup({ variant = 'header' }) {
       <div className="brand-lockup-divider" aria-hidden />
       <div className="brand-lockup-text">
         <div className="brand-lockup-title-row">
-          <span className="brand-lockup-radar">Radar-Mora</span>
-          <span className="brand-lockup-tag">IA · Alertas tempranas</span>
+          <span className="brand-lockup-radar">Radar Mora</span>
         </div>
       </div>
     </div>

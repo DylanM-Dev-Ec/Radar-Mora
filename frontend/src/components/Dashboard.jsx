@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Users, CreditCard, DollarSign, AlertTriangle, TrendingUp, Bell,
-  Building2, ShieldAlert, ChevronRight, Activity,
+  AlertTriangle, TrendingUp, Bell, ShieldAlert, Activity,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, AreaChart, Area, Legend, CartesianGrid,
 } from 'recharts';
-import { dashboardAPI, alertsAPI } from '../services/api';
-import { RISK_COLORS, COOP, CHART_GRID, CHART_AXIS, PIE_STYLE } from '../theme';
+import { dashboardAPI, alertsAPI, getColaSemanal } from '../services/api';
+import { RISK_COLORS, COOP, CHART_GRID, CHART_AXIS } from '../theme';
 import DashboardExtendedStats from './DashboardExtendedStats';
+import DashboardPreventiveWidget from './DashboardPreventiveWidget';
 
 function formatCurrency(n) {
   if (n == null) return '$0';
@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-export default function Dashboard() {
+function DashboardStandard() {
   const [overview, setOverview] = useState(null);
   const [riskDist, setRiskDist] = useState([]);
   const [trend, setTrend] = useState([]);
@@ -74,11 +74,9 @@ export default function Dashboard() {
       .then((al) => {
         if (!cancelled) {
           const list = Array.isArray(al) ? al : (al?.alerts || []);
-          const totalCount = al && !Array.isArray(al) && al.total_counts
-            ? (al.total_counts.alta + al.total_counts.media + al.total_counts.baja)
-            : list.length;
-          setTotalAlerts(totalCount);
-          setAlerts(list.slice(0, 6));
+          setTotalAlerts(getColaSemanal(al));
+          const sorted = [...list].sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
+          setAlerts(sorted.slice(0, 10));
         }
       })
       .catch(() => { if (!cancelled) setAlerts([]); });
@@ -109,19 +107,15 @@ export default function Dashboard() {
     );
   }
 
-  const totalRiesgo = (overview?.socios_riesgo_alto || 0) + (overview?.socios_riesgo_critico || 0);
+  const universoRiesgo =
+    overview?.universo_riesgo_total
+    ?? (overview?.socios_riesgo_alto || 0) + (overview?.socios_riesgo_critico || 0);
+  const colaSemanal =
+    overview?.cola_semanal_operativa
+    ?? overview?.casos_gestion_semana
+    ?? 0;
   const totalSocios = overview?.total_socios || 1;
-  const pctRiesgo = ((totalRiesgo / totalSocios) * 100).toFixed(1);
-
-  const metrics = overview ? [
-    { key: 'socios', label: 'Socios activos', value: formatNumber(overview.total_socios), icon: Users, tone: 'green' },
-    { key: 'creditos', label: 'Créditos vigentes', value: formatNumber(overview.creditos_vigentes), icon: CreditCard, tone: 'green' },
-    { key: 'cartera', label: 'Cartera colocada', value: formatCurrency(overview.cartera_total), icon: DollarSign, tone: 'gold' },
-    { key: 'mora', label: 'Tasa de morosidad', value: `${(overview.tasa_morosidad || 0).toFixed(1)}%`, icon: Activity, tone: 'risk' },
-    { key: 'alto', label: 'Riesgo alto', value: formatNumber(overview.socios_riesgo_alto), icon: ShieldAlert, tone: 'warn' },
-    { key: 'critico', label: 'Riesgo crítico', value: formatNumber(overview.socios_riesgo_critico), icon: AlertTriangle, tone: 'critical' },
-    { key: 'monto', label: 'Exposición en riesgo', value: formatCurrency(overview.monto_en_riesgo), icon: DollarSign, tone: 'warn' },
-  ] : [];
+  const pctPrioritarios = ((universoRiesgo / totalSocios) * 100).toFixed(1);
 
   const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
     if (percent < 0.07) return null;
@@ -173,54 +167,79 @@ export default function Dashboard() {
             <span className="dashboard-hero-eyebrow">Cooperativa Tulcán · Carchi</span>
             <h1>Panel de Riesgo Crediticio</h1>
             <p>
-              Vista consolidada de cartera, morosidad y alertas del motor <strong>Radar-Mora</strong>.
+              Vista consolidada de cartera, morosidad y <strong>cobranza preventiva</strong> con Radar Mora.
               Datos actualizados para gestión proactiva con socios.
             </p>
           </div>
           <div className="dashboard-hero-stats">
             <div className="hero-stat hero-stat--gold">
-              <span className="hero-stat-value">{pctRiesgo}%</span>
-              <span className="hero-stat-label">Socios en riesgo alto/crítico</span>
+              <span className="hero-stat-value">{pctPrioritarios}%</span>
+              <span className="hero-stat-label">Casos prioritarios / socios activos</span>
+              <span className="hero-stat-hint">Cobertura del radar · no es tasa de mora</span>
             </div>
             <div className="hero-stat hero-stat--green">
-              <span className="hero-stat-value">{totalAlerts}</span>
-              <span className="hero-stat-label">Alertas activas</span>
+              <span className="hero-stat-value">{formatNumber(colaSemanal)}</span>
+              <span className="hero-stat-label">Cola semanal operativa</span>
             </div>
-            <Link to="/alertas" className="hero-stat-link">
-              Ver alertas <ChevronRight size={16} />
-            </Link>
+            <div className="hero-stat hero-stat--muted">
+              <span className="hero-stat-value">{formatNumber(universoRiesgo)}</span>
+              <span className="hero-stat-label">Socios en radar (alto + crítico)</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Resumen ejecutivo unificado */}
-      <section className="dashboard-section">
+      <DashboardPreventiveWidget />
+
+      {/* Alertas prioritarias */}
+      <section className="dashboard-section dashboard-section--priority">
         <div className="section-heading">
-          <Building2 size={20} className="section-heading-icon" />
+          <Bell size={20} className="section-heading-icon" />
           <div>
-            <h2>Resumen ejecutivo</h2>
-            <p>Indicadores clave de la cooperativa al día de hoy</p>
+            <h2>Alertas prioritarias</h2>
+            <p>Top 10 de la cola operativa ({formatNumber(colaSemanal)} casos/semana) · universo en radar: {formatNumber(universoRiesgo)}</p>
           </div>
         </div>
 
-        <div className="metrics-panel">
-          {metrics.map((m) => (
-            <div key={m.key} className={`metric-cell metric-cell--${m.tone}`}>
-              <div className="metric-cell-icon">
-                <m.icon size={20} />
-              </div>
-              <div className="metric-cell-body">
-                <span className="metric-cell-value">{m.value}</span>
-                <span className="metric-cell-label">{m.label}</span>
-              </div>
-            </div>
-          ))}
+        <div className="card card--alerts card--alerts-prominent">
+          <div className="alerts-feed alerts-feed--prominent">
+            {alerts.length === 0 ? (
+              <div className="empty-state"><p>Sin alertas pendientes</p></div>
+            ) : (
+              alerts.map((alert, i) => (
+                <Link
+                  key={alert.id || i}
+                  to={`/socios/${alert.socio_id}`}
+                  className={`alert-feed-item prioridad-${alert.prioridad || 'media'}`}
+                >
+                  <div className={`alert-icon ${alert.prioridad || 'media'}`}>
+                    <AlertTriangle size={15} />
+                  </div>
+                  <div className="alert-content">
+                    <div className="alert-title">{alert.socio_nombre}</div>
+                    <div className="alert-message">
+                      {alert.tipo}
+                      {alert.mensaje && ` · ${alert.mensaje.length > 70 ? `${alert.mensaje.slice(0, 70)}…` : alert.mensaje}`}
+                    </div>
+                    {alert.fecha && (
+                      <div className="alert-meta">{alert.fecha} · Nivel: {alert.risk_level}</div>
+                    )}
+                  </div>
+                  <span className={`badge ${(alert.risk_level || '').toLowerCase().replace('í', 'i')}`}>
+                    {alert.risk_score}
+                  </span>
+                </Link>
+              ))
+            )}
+          </div>
         </div>
+      </section>
 
-        {/* Barra de distribución de riesgo integrada */}
-        {riskDist.length > 0 && (
+      {/* Composición de riesgo */}
+      {riskDist.length > 0 && (
+        <section className="dashboard-section">
           <div className="risk-strip">
-            <span className="risk-strip-title">Composición de riesgo en cartera</span>
+            <span className="risk-strip-title">Composición de riesgo en cartera (cola de gestión)</span>
             <div className="risk-strip-bars">
               {riskDist.map((r) => {
                 const total = riskDist.reduce((s, x) => s + (x.cantidad || 0), 0) || 1;
@@ -247,8 +266,8 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Análisis gráfico */}
       <section className="dashboard-section">
@@ -317,97 +336,48 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Seguimiento y alertas */}
+      {/* Tendencia de morosidad */}
       <section className="dashboard-section">
         <div className="section-heading">
-          <Bell size={20} className="section-heading-icon" />
+          <Activity size={20} className="section-heading-icon" />
           <div>
-            <h2>Seguimiento y alertas</h2>
-            <p>Tendencia de mora y casos que requieren atención</p>
+            <h2>Tendencia de morosidad</h2>
+            <p>Evolución de la cartera en los últimos 12 meses</p>
           </div>
-          <Link to="/alertas" className="section-heading-action">
-            Ver todas <ChevronRight size={16} />
-          </Link>
         </div>
 
-        <div className="chart-grid">
-          <div className="card card--chart">
-            <div className="card-header">
-              <div>
-                <div className="card-title">Tendencia de morosidad</div>
-                <div className="card-subtitle">Últimos 12 meses · pagos atrasados</div>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={trend}>
-                <defs>
-                  <linearGradient id="colorMora" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={RISK_COLORS.Crítico} stopOpacity={0.25} />
-                    <stop offset="95%" stopColor={RISK_COLORS.Crítico} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} unit="%" />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="tasa_morosidad"
-                  name="Tasa mora (%)"
-                  stroke={RISK_COLORS.Crítico}
-                  fill="url(#colorMora)"
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: RISK_COLORS.Crítico }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="card card--alerts">
-            <div className="card-header">
-              <div>
-                <div className="card-title">Alertas prioritarias</div>
-                <div className="card-subtitle">Detección temprana Radar-Mora</div>
-              </div>
-              {alerts.length > 0 && (
-                <span className="alerts-count-badge">{alerts.length}</span>
-              )}
-            </div>
-            <div className="alerts-feed">
-              {alerts.length === 0 ? (
-                <div className="empty-state"><p>Sin alertas pendientes</p></div>
-              ) : (
-                alerts.map((alert, i) => (
-                  <Link
-                    key={alert.id || i}
-                    to={`/socios/${alert.socio_id}`}
-                    className={`alert-feed-item prioridad-${alert.prioridad || 'media'}`}
-                  >
-                    <div className={`alert-icon ${alert.prioridad || 'media'}`}>
-                      <AlertTriangle size={15} />
-                    </div>
-                    <div className="alert-content">
-                      <div className="alert-title">{alert.socio_nombre}</div>
-                      <div className="alert-message">
-                        {alert.tipo}
-                        {alert.mensaje && ` · ${alert.mensaje.length > 55 ? `${alert.mensaje.slice(0, 55)}…` : alert.mensaje}`}
-                      </div>
-                      {alert.fecha && (
-                        <div className="alert-meta">{alert.fecha} · Score: {alert.risk_score}</div>
-                      )}
-                    </div>
-                    <span className={`badge ${(alert.risk_level || '').toLowerCase().replace('í', 'i')}`}>
-                      {alert.risk_score}
-                    </span>
-                  </Link>
-                ))
-              )}
-            </div>
-          </div>
+        <div className="card card--chart">
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={trend}>
+              <defs>
+                <linearGradient id="colorMora" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={RISK_COLORS.Crítico} stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={RISK_COLORS.Crítico} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} unit="%" />
+              <Tooltip content={<CustomTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="tasa_morosidad"
+                name="Tasa mora (%)"
+                stroke={RISK_COLORS.Crítico}
+                fill="url(#colorMora)"
+                strokeWidth={2}
+                dot={{ r: 3, fill: RISK_COLORS.Crítico }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </section>
 
       <DashboardExtendedStats extendedStats={extendedStats} loading={extendedLoading} />
     </div>
   );
+}
+
+export default function Dashboard() {
+  return <DashboardStandard />;
 }

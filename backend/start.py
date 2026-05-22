@@ -26,7 +26,13 @@ except (UnicodeEncodeError, AttributeError):
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, backend_dir)
 
-from database import db_exists, get_db_path, get_table_count
+from database import (
+    db_exists,
+    get_db_path,
+    get_table_count,
+    normalizar_dias_atraso_en_db,
+    normalizar_ventana_preventiva_en_db,
+)
 from models.data_generator import generate_data
 from models.risk_model import train_model, model_exists
 
@@ -53,14 +59,30 @@ def main():
         print(f"   Créditos: {get_table_count('creditos')}")
         print(f"   Pagos: {get_table_count('pagos')}")
         print(f"   Transacciones: {get_table_count('transacciones')}")
+        capped = normalizar_dias_atraso_en_db()
+        if capped:
+            _out(f"\n[DB] Dias de atraso normalizados (tope 100): {capped} pagos actualizados")
+        ventana = normalizar_ventana_preventiva_en_db()
+        if ventana:
+            _out(f"\n[DB] Ventana preventiva (3-15 dias): {ventana} proximas cuotas ajustadas")
+            try:
+                from models.preventive_cache import invalidate_preventive_cache
+                invalidate_preventive_cache()
+            except Exception:
+                pass
 
     # Paso 1b: Importar dataset maestro real si existe el CSV
     csv_path = os.path.join(os.path.dirname(backend_dir), "dataset_maestro_dashboard.csv")
     if os.path.exists(csv_path):
-        from database import execute_query_one
-        has_maestro = execute_query_one(
-            "SELECT 1 as ok FROM sqlite_master WHERE type='table' AND name='dataset_maestro'"
-        )
+        from database import execute_query_one, DB_URL
+        if DB_URL:
+            has_maestro = execute_query_one(
+                "SELECT 1 as ok FROM information_schema.tables WHERE table_name='dataset_maestro'"
+            )
+        else:
+            has_maestro = execute_query_one(
+                "SELECT 1 as ok FROM sqlite_master WHERE type='table' AND name='dataset_maestro'"
+            )
         if not has_maestro:
             _out("\n[CSV] Dataset de produccion detectado. Importando dataset maestro...")
             try:

@@ -484,7 +484,7 @@ def generate_data(db_path: str, n_socios: int = 500):
                     estado_pago = "Atrasado"
                     fecha_pago_actual = None
                     monto_pagado = 0
-                    dias_atraso = (now - fecha_esperada).days
+                    dias_atraso = min((now - fecha_esperada).days, 100)
                 else:
                     estado_pago = "Pagado"
 
@@ -506,12 +506,12 @@ def generate_data(db_path: str, n_socios: int = 500):
                         monto_pagado = round(cred["cuota_mensual"] * random.uniform(0.5, 0.9), 2)
                         estado_pago = "Pagado"
                     else:
-                        dias_atraso = (now - fecha_esperada).days
+                        dias_atraso = min((now - fecha_esperada).days, 100)
                         monto_pagado = 0
                         estado_pago = "Atrasado"
                 else:
                     # Sin pagar
-                    dias_atraso = (now - fecha_esperada).days
+                    dias_atraso = min((now - fecha_esperada).days, 100)
                     monto_pagado = 0
                     estado_pago = "Atrasado"
 
@@ -529,7 +529,7 @@ def generate_data(db_path: str, n_socios: int = 500):
                 "fecha_pago": fecha_pago_actual,
                 "monto_esperado": cred["cuota_mensual"],
                 "monto_pagado": monto_pagado,
-                "dias_atraso": max(0, dias_atraso),
+                "dias_atraso": min(max(0, dias_atraso), 100),
                 "estado": estado_pago,
                 "accion_preventiva": None,
             })

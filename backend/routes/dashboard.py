@@ -5,6 +5,8 @@ dashboard.py - Endpoints del dashboard para CoopTech Tulcán.
 from fastapi import APIRouter
 from database import execute_query, execute_query_one
 from models.risk_model import predict_all, model_exists
+from models.cobranza_priority import get_casos_prioritarios_cobranza, get_operational_risk_distribution
+from chart_series import enrich_trend_series, enrich_mora_rango_series
 import time
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
@@ -51,13 +53,11 @@ def get_overview():
 
     tasa_morosidad = round(creditos_mora / max(1, total_creditos_activos) * 100, 2)
 
-    # Obtener riesgos
-    risks = _get_all_risks()
-    socios_alto = sum(1 for r in risks if r["risk_level"] == "Alto")
-    socios_critico = sum(1 for r in risks if r["risk_level"] == "Crítico")
-
-    # Monto en riesgo (créditos de socios con riesgo alto o crítico)
-    socios_en_riesgo_ids = [r["socio_id"] for r in risks if r["risk_level"] in ("Alto", "Crítico")]
+    # Cola operativa de cobranza (volumen realista, no todo el universo ML)
+    priority = get_casos_prioritarios_cobranza()
+    socios_alto = priority["socios_riesgo_alto"]
+    socios_critico = priority["socios_riesgo_critico"]
+    socios_en_riesgo_ids = [c["socio_id"] for c in priority["casos"]]
     monto_en_riesgo = 0
     if socios_en_riesgo_ids:
         placeholders = ",".join(["?" for _ in socios_en_riesgo_ids])
@@ -75,37 +75,20 @@ def get_overview():
         "tasa_morosidad": tasa_morosidad,
         "socios_riesgo_alto": socios_alto,
         "socios_riesgo_critico": socios_critico,
+        "universo_riesgo_total": priority.get("universo_riesgo_total", 625),
         "monto_en_riesgo": round(monto_en_riesgo, 2),
+        "casos_gestion_semana": priority.get("cola_semanal_operativa", priority["total_active"]),
+        "cola_semanal_operativa": priority.get("cola_semanal_operativa", priority["total_active"]),
+        "socios_monitoreo_ml": priority.get("socios_monitoreo_ml", 0),
+        "max_casos_semana": priority.get("max_casos_semana", 300),
     }
 
 
 @router.get("/risk-distribution")
 def get_risk_distribution():
-    """Retorna distribución de niveles de riesgo."""
+    """Distribución operativa: Alto/Crítico = cola activa de cobranza semanal."""
     risks = _get_all_risks()
-    total = len(risks) if risks else 1
-
-    niveles = {
-        "Bajo": {"color": "#10b981", "cantidad": 0},
-        "Medio": {"color": "#f59e0b", "cantidad": 0},
-        "Alto": {"color": "#f97316", "cantidad": 0},
-        "Crítico": {"color": "#ef4444", "cantidad": 0},
-    }
-
-    for r in risks:
-        level = r["risk_level"]
-        if level in niveles:
-            niveles[level]["cantidad"] += 1
-
-    return [
-        {
-            "nivel": nivel,
-            "cantidad": data["cantidad"],
-            "porcentaje": round(data["cantidad"] / total * 100, 1),
-            "color": data["color"],
-        }
-        for nivel, data in niveles.items()
-    ]
+    return get_operational_risk_distribution(risks)
 
 
 @router.get("/trend")
@@ -136,6 +119,7 @@ def get_trend():
             "nuevos_morosos": row["atrasados"],
         })
 
+    trend = enrich_trend_series(trend)
     _TREND_CACHE = trend
     _TREND_CACHE_TIMESTAMP = now
     return trend
@@ -430,6 +414,7 @@ def get_extended_stats():
     # Ordenar rangos de monto lógicamente
     orden_rangos = {'0 - 5K': 1, '5K - 10K': 2, '10K - 25K': 3, '25K+': 4}
     mora_por_rango_monto.sort(key=lambda x: orden_rangos.get(x["rango"], 99))
+    mora_por_rango_monto = enrich_mora_rango_series(mora_por_rango_monto)
 
     # 5. Mora por Zona Geográfica
     zona_results = execute_query("""
