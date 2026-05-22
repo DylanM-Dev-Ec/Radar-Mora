@@ -9,6 +9,8 @@ from contextlib import contextmanager
 DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 DB_PATH = os.path.join(DB_DIR, "cooptech.db")
 
+os.makedirs(DB_DIR, exist_ok=True)
+
 
 def get_db_path() -> str:
     """Retorna la ruta absoluta de la base de datos."""

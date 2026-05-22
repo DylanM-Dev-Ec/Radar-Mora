@@ -4,6 +4,7 @@ import { ArrowLeft, User, MapPin, Phone, Mail, Calendar, Briefcase, Shield, Ligh
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, Cell } from 'recharts';
 import { sociosAPI, modelAPI } from '../services/api';
 import RiskGauge from './RiskGauge';
+import { RISK_COLORS, COOP, scoreToColor, CHART_GRID, CHART_AXIS } from '../theme';
 
 const RECOMMENDATIONS = {
   'Bajo': { icon: '✅', title: 'Buen comportamiento', text: 'Socio con buen comportamiento crediticio. Mantener seguimiento estándar y considerar para nuevos productos.', color: 'bajo' },
@@ -19,20 +20,15 @@ function getRiskLevel(score) {
   return 'Crítico';
 }
 
-function getBarColor(score) {
-  if (score <= 30) return '#10b981';
-  if (score <= 60) return '#f59e0b';
-  if (score <= 80) return '#f97316';
-  return '#ef4444';
-}
+const getBarColor = scoreToColor;
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#1a2035', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px 16px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
-      <p style={{ color: '#f1f5f9', fontWeight: 600, marginBottom: 6, fontSize: 13 }}>{label}</p>
+    <div style={{ background: COOP.blancoTarjetas, border: '1px solid #ddd', borderTop: `3px solid ${COOP.acentoDorado}`, borderRadius: 8, padding: '12px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+      <p style={{ color: COOP.azulTexto, fontWeight: 600, marginBottom: 6, fontSize: 13 }}>{label}</p>
       {payload.map((entry, i) => (
-        <p key={i} style={{ color: entry.color || '#94a3b8', fontSize: 12, margin: '2px 0' }}>
+        <p key={i} style={{ color: entry.color || COOP.textoSecundario, fontSize: 12, margin: '2px 0' }}>
           {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
         </p>
       ))}
@@ -122,13 +118,18 @@ export default function SocioProfile() {
       </div>
 
       {/* Recommendation */}
-      <div className={`recommendation-card ${rec.color}`}>
+      <div className={`recommendation-card risk-profile-card ${rec.color}`}>
         <div style={{ fontSize: 28 }}>{rec.icon}</div>
-        <div>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--coop-texto-principal)' }}>
             <Lightbulb size={16} /> Recomendación IA: {rec.title}
           </h3>
           <p>{rec.text}</p>
+          {(level === 'Alto' || level === 'Crítico') && (
+            <button type="button" className="btn-coop-primary" style={{ marginTop: 14, maxWidth: 320 }}>
+              Contactar para Reestructuración
+            </button>
+          )}
         </div>
       </div>
 
@@ -194,15 +195,15 @@ export default function SocioProfile() {
           </div>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={paymentChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
+              <CartesianGrid {...CHART_GRID} />
+              <XAxis dataKey="name" {...CHART_AXIS} />
+              <YAxis {...CHART_AXIS} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="esperado" name="Esperado" fill="rgba(99, 102, 241, 0.4)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="pagado" name="Pagado" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="esperado" name="Esperado" fill="rgba(0, 150, 64, 0.35)" stroke="none" strokeWidth={0} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="pagado" name="Pagado" stroke="none" strokeWidth={0} radius={[4, 4, 0, 0]}>
                 {paymentChartData.map((entry, i) => (
-                  <Cell key={i} fill={entry.atraso > 5 ? '#ef4444' : entry.atraso > 0 ? '#f59e0b' : '#10b981'} />
+                  <Cell key={i} fill={entry.atraso > 5 ? RISK_COLORS.Crítico : entry.atraso > 0 ? RISK_COLORS.Medio : RISK_COLORS.Bajo} />
                 ))}
               </Bar>
             </BarChart>
@@ -220,15 +221,15 @@ export default function SocioProfile() {
             <AreaChart data={balanceHistory}>
               <defs>
                 <linearGradient id="colorSaldo" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  <stop offset="5%" stopColor={COOP.acentoDorado} stopOpacity={0.35} />
+                  <stop offset="95%" stopColor={COOP.acentoDorado} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="fecha" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="saldo" name="Saldo ($)" stroke="#6366f1" fill="url(#colorSaldo)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="saldo" name="Saldo ($)" stroke={COOP.acentoDorado} fill="url(#colorSaldo)" strokeWidth={2} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -247,9 +248,9 @@ export default function SocioProfile() {
             <ResponsiveContainer width="100%" height={280}>
               <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
                 <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: COOP.textoSecundario }} />
                 <PolarRadiusAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
-                <Radar name="Perfil" dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.25} strokeWidth={2} />
+                <Radar name="Perfil" dataKey="value" stroke={COOP.acentoDorado} fill={COOP.acentoDorado} fillOpacity={0.2} strokeWidth={2} />
               </RadarChart>
             </ResponsiveContainer>
           ) : (
@@ -265,7 +266,8 @@ export default function SocioProfile() {
             </div>
           </div>
           <div style={{ maxHeight: 280, overflowY: 'auto' }}>
-            <table className="data-table">
+            <div className="table-container">
+            <table className="data-table data-table--static">
               <thead>
                 <tr>
                   <th>Fecha</th>
@@ -278,22 +280,63 @@ export default function SocioProfile() {
                 {transactions.map((t, i) => {
                   const isPositive = t.tipo?.includes('Depósito') || t.tipo?.includes('Recibida');
                   return (
-                    <tr key={i} style={{ cursor: 'default' }}>
-                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.fecha}</td>
-                      <td style={{ fontSize: 12 }}>{t.tipo}</td>
-                      <td style={{ fontSize: 12, fontWeight: 600, color: isPositive ? '#10b981' : '#ef4444' }}>
+                    <tr key={i}>
+                      <td className="cell-muted" style={{ fontSize: 13 }}>{t.fecha}</td>
+                      <td style={{ fontSize: 13 }}>{t.tipo}</td>
+                      <td className="cell-strong" style={{ fontSize: 13, color: isPositive ? RISK_COLORS.Bajo : RISK_COLORS.Crítico }}>
                         {isPositive ? '+' : '-'}${Math.abs(t.monto || 0).toLocaleString()}
                       </td>
-                      <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>${(t.saldo_resultante || 0).toLocaleString()}</td>
+                      <td className="cell-muted" style={{ fontSize: 13 }}>${(t.saldo_resultante || 0).toLocaleString()}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+            </div>
             {transactions.length === 0 && <div className="empty-state"><p>Sin transacciones</p></div>}
           </div>
         </div>
       </div>
+
+      {/* Tabla detalle de cuotas */}
+      {payments.length > 0 && (
+        <div className="card animate-in" style={{ marginTop: 24 }}>
+          <div className="card-header">
+            <div>
+              <div className="card-title">Detalle de cuotas</div>
+              <div className="card-subtitle">Últimas cuotas: esperado, pagado y días de atraso</div>
+            </div>
+          </div>
+          <div className="table-container">
+            <table className="data-table data-table--static">
+              <thead>
+                <tr>
+                  <th>Cuota</th>
+                  <th>Esperado</th>
+                  <th>Pagado</th>
+                  <th>Atraso (días)</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p, i) => {
+                  const atraso = p.dias_atraso || 0;
+                  const estado = atraso > 5 ? 'critico' : atraso > 0 ? 'medio' : 'bajo';
+                  return (
+                    <tr key={i}>
+                      <td className="cell-muted">#{p.num_cuota ?? i + 1}</td>
+                      <td className="cell-strong">${(p.monto_esperado || 0).toLocaleString()}</td>
+                      <td className="cell-strong">${(p.monto_pagado || 0).toLocaleString()}</td>
+                      <td className="cell-muted">{atraso}</td>
+                      <td><span className={`badge ${estado}`}>{atraso > 0 ? 'Atrasado' : 'Al día'}</span></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Credits Summary */}
       {creditos.length > 0 && (
@@ -301,7 +344,8 @@ export default function SocioProfile() {
           <div className="card-header">
             <div className="card-title">Créditos del Socio</div>
           </div>
-          <table className="data-table">
+          <div className="table-container">
+          <table className="data-table data-table--static">
             <thead>
               <tr>
                 <th>ID</th>
@@ -315,11 +359,11 @@ export default function SocioProfile() {
             </thead>
             <tbody>
               {creditos.map((c, i) => (
-                <tr key={i} style={{ cursor: 'default' }}>
-                  <td style={{ color: 'var(--text-muted)' }}>#{c.id}</td>
+                <tr key={i}>
+                  <td className="cell-muted">#{c.id}</td>
                   <td>{c.tipo}</td>
-                  <td style={{ fontWeight: 600 }}>${(c.monto || 0).toLocaleString()}</td>
-                  <td>{c.plazo} meses</td>
+                  <td className="cell-strong">${(c.monto || 0).toLocaleString()}</td>
+                  <td className="cell-muted">{c.plazo} meses</td>
                   <td>${(c.cuota || 0).toLocaleString()}</td>
                   <td>
                     <span className={`badge ${c.estado === 'Vigente' ? 'bajo' : c.estado === 'Mora' ? 'critico' : 'medio'}`}>
@@ -329,15 +373,16 @@ export default function SocioProfile() {
                   <td>
                     <div className="risk-bar">
                       <div className="risk-bar-track" style={{ maxWidth: 60 }}>
-                        <div className="risk-bar-fill" style={{ width: `${(c.progreso || 0) * 100}%`, background: '#6366f1' }} />
+                        <div className="risk-bar-fill" style={{ width: `${(c.progreso || 0) * 100}%`, background: COOP.acentoDorado }} />
                       </div>
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{((c.progreso || 0) * 100).toFixed(0)}%</span>
+                      <span className="cell-muted" style={{ fontSize: 12 }}>{((c.progreso || 0) * 100).toFixed(0)}%</span>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

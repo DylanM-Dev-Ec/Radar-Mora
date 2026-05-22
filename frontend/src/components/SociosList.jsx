@@ -2,20 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { sociosAPI } from '../services/api';
+import { scoreToColor, scoreToLevel } from '../theme';
 
-function getRiskColor(score) {
-  if (score <= 30) return '#10b981';
-  if (score <= 60) return '#f59e0b';
-  if (score <= 80) return '#f97316';
-  return '#ef4444';
-}
-
-function getRiskLevel(score) {
-  if (score <= 30) return 'bajo';
-  if (score <= 60) return 'medio';
-  if (score <= 80) return 'alto';
-  return 'critico';
-}
+const getRiskColor = scoreToColor;
+const getRiskLevel = scoreToLevel;
 
 export default function SociosList() {
   const navigate = useNavigate();
@@ -57,9 +47,9 @@ export default function SociosList() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Socios</h1>
-        <p>Explorador de perfiles de riesgo — {total} socios registrados</p>
+      <div className="page-intro">
+        <h1>Directorio de Socios</h1>
+        <p>{total} socios registrados · Perfilamiento y score de riesgo Radar-Mora</p>
       </div>
 
       <div className="filters-bar">
@@ -123,10 +113,10 @@ export default function SociosList() {
                     const color = getRiskColor(score);
                     return (
                       <tr key={socio.id} onClick={() => navigate(`/socios/${socio.id}`)}>
-                        <td style={{ fontWeight: 600 }}>{socio.nombre}</td>
-                        <td style={{ color: 'var(--text-secondary)' }}>{socio.cedula}</td>
-                        <td style={{ color: 'var(--text-secondary)' }}>{socio.agencia ? socio.agencia.replace(/^Agencia\s+/i, '') : ''}</td>
-                        <td style={{ fontWeight: 500 }}>${(socio.monto || socio.credito_activo || 0).toLocaleString()}</td>
+                        <td className="cell-strong">{socio.nombre}</td>
+                        <td className="cell-muted">{socio.cedula}</td>
+                        <td className="cell-muted">{socio.agencia}</td>
+                        <td className="cell-strong">${(socio.monto || socio.credito_activo || 0).toLocaleString()}</td>
                         <td>
                           <div className="risk-bar">
                             <div className="risk-bar-track">
@@ -136,7 +126,7 @@ export default function SociosList() {
                           </div>
                         </td>
                         <td><span className={`badge ${level.toLowerCase().replace('í','i')}`}>{level}</span></td>
-                        <td style={{ color: 'var(--text-secondary)' }}>{(socio.dias_atraso_promedio || 0).toFixed(1)}</td>
+                        <td className="cell-muted">{(socio.dias_atraso_promedio || 0).toFixed(1)}</td>
                       </tr>
                     );
                   })}

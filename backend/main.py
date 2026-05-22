@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routes.dashboard import router as dashboard_router
+from routes.dashboard_extended import router as dashboard_extended_router
 from routes.socios import router as socios_router
 from routes.alerts import router as alerts_router
 
@@ -42,6 +43,7 @@ app.add_middleware(
 
 # Registrar routers
 app.include_router(dashboard_router)
+app.include_router(dashboard_extended_router)
 app.include_router(socios_router)
 app.include_router(alerts_router)
 

@@ -1,7 +1,8 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, AlertTriangle, Shield, Brain } from 'lucide-react';
+import { LayoutDashboard, Users, AlertTriangle, Brain } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { alertsAPI } from '../services/api';
+import { BrandLockup } from './BrandLogo';
 
 export default function Sidebar() {
   const location = useLocation();
@@ -26,13 +27,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">
-          <Shield size={22} />
-        </div>
-        <div className="sidebar-logo-text">
-          <h1>CoopTech Tulcán</h1>
-          <span>Sistema de Riesgo</span>
-        </div>
+        <BrandLockup variant="sidebar" />
       </div>
 
       <div className="sidebar-divider" />

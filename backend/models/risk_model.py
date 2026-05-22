@@ -5,6 +5,7 @@ CoopTech Tulcán - Sistema de Perfilamiento de Riesgo.
 
 import os
 import sqlite3
+import threading
 import numpy as np
 import pandas as pd
 import joblib
@@ -42,6 +43,22 @@ FEATURE_DESCRIPTIONS = {
 }
 
 FEATURE_NAMES = list(FEATURE_DESCRIPTIONS.keys())
+
+_predict_all_cache: list[dict] | None = None
+_predict_all_cache_stamp: tuple[float, float] | None = None
+_predict_all_lock = threading.Lock()
+
+
+def _current_predict_all_stamp() -> tuple[float, float]:
+    model_mtime = os.path.getmtime(MODEL_PATH) if os.path.exists(MODEL_PATH) else 0.0
+    db_mtime = os.path.getmtime(DB_PATH) if os.path.exists(DB_PATH) else 0.0
+    return (model_mtime, db_mtime)
+
+
+def _invalidate_predict_all_cache() -> None:
+    global _predict_all_cache, _predict_all_cache_stamp
+    _predict_all_cache = None
+    _predict_all_cache_stamp = None
 
 
 def _get_connection():
@@ -299,6 +316,7 @@ def train_model() -> dict:
     print(f"\n   OK. Modelo guardado en: {MODEL_PATH}")
     print("=" * 60)
 
+    _invalidate_predict_all_cache()
     return metrics
 
 
@@ -389,48 +407,64 @@ def predict_risk(socio_id: int) -> dict:
 
 def predict_all() -> list[dict]:
     """
-    Predice el riesgo para todos los socios de forma vectorial y ultra rápida (con caché en memoria).
+    Predice el riesgo para todos los socios con créditos activos.
+    Resultados en caché en memoria para evitar recalcular en cada request.
+    
+    Returns:
+        Lista de dicts con socio_id, risk_score, risk_level.
     """
-    global _PREDICTIONS_CACHE, _CACHE_TIMESTAMP
-    now = time.time()
-    if _PREDICTIONS_CACHE is not None and (now - _CACHE_TIMESTAMP) < CACHE_DURATION:
-        return _PREDICTIONS_CACHE
+    global _predict_all_cache, _predict_all_cache_stamp
 
-    model = _load_model()
-    features_df = compute_features()
+    cache_key = _current_predict_all_stamp()
+    if _predict_all_cache is not None and _predict_all_cache_stamp == cache_key:
+        return _predict_all_cache
 
-    if features_df.empty:
-        return []
+    with _predict_all_lock:
+        if _predict_all_cache is not None and _predict_all_cache_stamp == cache_key:
+            return _predict_all_cache
 
-    # 1. Preparar matriz X completa de forma vectorial
-    X = features_df[FEATURE_NAMES].values
-    X = np.nan_to_num(X, nan=0.0, posinf=100.0, neginf=-100.0)
+        model = _load_model()
+        features_df = compute_features()
 
-    # 2. Predecir todo en una sola llamada matricial
-    risk_levels = model.predict(X)
-    probas_all = model.predict_proba(X)
-    classes = model.classes_
+        if features_df.empty:
+            _predict_all_cache = []
+            _predict_all_cache_stamp = cache_key
+            return []
 
-    # Mapear a scores: Bajo=10, Medio=40, Alto=70, Crítico=95
-    class_scores = {"Bajo": 10, "Medio": 40, "Alto": 70, "Crítico": 95}
-    class_weights = np.array([class_scores.get(cls, 50) for cls in classes])
+        # 1. Preparar matriz X completa de forma vectorial
+        X = features_df[FEATURE_NAMES].astype(float).values
+        X = np.nan_to_num(X, nan=0.0, posinf=100.0, neginf=-100.0)
 
-    # Producto matricial (dot product) para obtener todos los scores instantáneamente
-    risk_scores = probas_all.dot(class_weights)
-    risk_scores = np.clip(risk_scores, 0, 100)
+        # 2. Predecir todo en una sola llamada matricial
+        risk_levels = model.predict(X)
+        probas_all = model.predict_proba(X)
+        classes = model.classes_
 
-    # 3. Construir lista de resultados final de forma directa
-    results = []
-    for i, (_, row) in enumerate(features_df.iterrows()):
-        results.append({
-            "socio_id": int(row["socio_id"]),
-            "risk_score": round(float(risk_scores[i]), 1),
-            "risk_level": risk_levels[i],
-        })
+        # Mapear a scores: Bajo=10, Medio=40, Alto=70, Crítico=95
+        class_scores = {"Bajo": 10, "Medio": 40, "Alto": 70, "Crítico": 95}
+        class_weights = np.array([class_scores.get(cls, 50) for cls in classes])
 
-    _PREDICTIONS_CACHE = results
-    _CACHE_TIMESTAMP = now
-    return results
+        # Producto matricial (dot product) para obtener todos los scores instantáneamente
+        risk_scores = probas_all.dot(class_weights)
+        risk_scores = np.clip(risk_scores, 0, 100).round(1)
+
+        # 3. Construir lista de resultados final de forma directa
+        results = [
+            {
+                "socio_id": int(sid),
+                "risk_score": float(score),
+                "risk_level": level,
+            }
+            for sid, score, level in zip(
+                features_df["socio_id"].values,
+                risk_scores,
+                risk_levels,
+            )
+        ]
+
+        _predict_all_cache = results
+        _predict_all_cache_stamp = cache_key
+        return results
 
 
 def get_feature_importance() -> list[dict]:

@@ -1,7 +1,8 @@
-fastapi==0.115.0
-uvicorn>=0.29.0
-pandas==2.2.0
-numpy==1.26.0
-scikit-learn==1.5.0
-python-dateutil==2.9.0
+# Python 3.10+ (recomendado 3.10–3.12). En 3.14 pip instalará wheels compatibles.
+fastapi>=0.115.0
+uvicorn[standard]>=0.29.0
+pandas>=2.2.0
+numpy>=1.26.0
+scikit-learn>=1.5.0
+python-dateutil>=2.9.0
 joblib>=1.3.0

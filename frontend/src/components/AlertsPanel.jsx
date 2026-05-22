@@ -1,7 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Search, Filter, Cpu, Brain, CheckCircle, TrendingUp, Sparkles, UserCheck } from 'lucide-react';
+import {
+  AlertTriangle, Search, Filter, Cpu, Brain, CheckCircle,
+  TrendingUp, Sparkles, UserCheck,
+} from 'lucide-react';
 import { alertsAPI, modelAPI } from '../services/api';
+
+function riskBadgeClass(level) {
+  const l = (level || '').toLowerCase();
+  if (l.includes('crít') || l.includes('crit')) return 'critico';
+  if (l.includes('alto')) return 'alto';
+  if (l.includes('medio')) return 'medio';
+  return 'bajo';
+}
+
+function priorityClass(prioridad) {
+  const p = (prioridad || '').toLowerCase();
+  if (p === 'alta' || p === 'critica') return 'alta';
+  if (p === 'media') return 'media';
+  return 'baja';
+}
 
 export default function AlertsPanel() {
   const navigate = useNavigate();
@@ -9,43 +27,46 @@ export default function AlertsPanel() {
   const [modelInfo, setModelInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [prioridadFilter, setPrioridadFilter] = useState('');
+  const [tipoFilter, setTipoFilter] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     Promise.all([
       alertsAPI.getAll().catch(() => []),
-      modelAPI.getInfo().catch(() => null)
+      modelAPI.getInfo().catch(() => null),
     ]).then(([alertsData, modelData]) => {
-      const alertList = Array.isArray(alertsData) ? alertsData : (alertsData?.alerts || []);
-      setAlerts(alertList);
+      if (cancelled) return;
+      const list = Array.isArray(alertsData) ? alertsData : (alertsData?.alerts || []);
+      setAlerts(list);
       setModelInfo(modelData);
       setLoading(false);
     }).catch(() => {
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     });
+    return () => { cancelled = true; };
   }, []);
 
-  // Filter logic
-  const filteredAlerts = alerts.filter(alert => {
-    const matchesSearch = alert.socio_nombre?.toLowerCase().includes(search.toLowerCase()) || 
-                          alert.mensaje?.toLowerCase().includes(search.toLowerCase());
-    
-    // Normalize priority names
-    let normalizedPriority = alert.prioridad?.toLowerCase() || '';
-    if (normalizedPriority === 'critica') normalizedPriority = 'alta'; // Map critical to high for UI clarity
-    
-    const matchesPriority = !priorityFilter || normalizedPriority === priorityFilter.toLowerCase();
-    const matchesType = !typeFilter || alert.tipo === typeFilter;
+  const tipos = [...new Set(alerts.map((a) => a.tipo).filter(Boolean))];
 
+  const filtered = alerts.filter((alert) => {
+    const q = search.toLowerCase();
+    const matchesSearch = !q
+      || alert.socio_nombre?.toLowerCase().includes(q)
+      || alert.mensaje?.toLowerCase().includes(q);
+    let p = (alert.prioridad || '').toLowerCase();
+    if (p === 'critica') p = 'alta';
+    const matchesPriority = !prioridadFilter || p === prioridadFilter;
+    const matchesType = !tipoFilter || alert.tipo === tipoFilter;
     return matchesSearch && matchesPriority && matchesType;
   });
 
-  // Calculate some stats from alerts
-  const highAlertsCount = alerts.filter(a => a.prioridad === 'alta' || a.prioridad === 'critica').length;
-  const mediumAlertsCount = alerts.filter(a => a.prioridad === 'media').length;
-  const lowAlertsCount = alerts.filter(a => a.prioridad === 'baja').length;
+  const counts = {
+    alta: alerts.filter((a) => a.prioridad === 'alta' || a.prioridad === 'critica').length,
+    media: alerts.filter((a) => a.prioridad === 'media').length,
+    baja: alerts.filter((a) => a.prioridad === 'baja').length,
+  };
 
   if (loading) {
     return (
@@ -58,200 +79,196 @@ export default function AlertsPanel() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-intro">
         <h1>Radar de Alertas Tempranas</h1>
-        <p>Predicciones del modelo de IA y desvíos transaccionales detectados</p>
+        <p>Predicciones del modelo Radar-Mora y desvíos transaccionales detectados</p>
       </div>
 
-      {/* Alertas Resumen & Telemetría IA Grid */}
-      <div className="chart-grid" style={{ gridTemplateColumns: '2fr 1.1fr', marginBottom: 24 }}>
-        
-        {/* Panel Izquierdo: Buscador y Lista de Alertas */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="card-header" style={{ marginBottom: 8, paddingBottom: 0 }}>
+      <div className="metrics-panel metrics-panel--compact" style={{ marginBottom: 24, gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div className="metric-cell metric-cell--critical">
+          <div className="metric-cell-icon"><AlertTriangle size={20} /></div>
+          <div className="metric-cell-body">
+            <span className="metric-cell-value">{counts.alta}</span>
+            <span className="metric-cell-label">Prioridad alta / crítica</span>
+          </div>
+        </div>
+        <div className="metric-cell metric-cell--warn">
+          <div className="metric-cell-icon"><AlertTriangle size={20} /></div>
+          <div className="metric-cell-body">
+            <span className="metric-cell-value">{counts.media}</span>
+            <span className="metric-cell-label">Prioridad media</span>
+          </div>
+        </div>
+        <div className="metric-cell metric-cell--green">
+          <div className="metric-cell-icon"><CheckCircle size={20} /></div>
+          <div className="metric-cell-body">
+            <span className="metric-cell-value">{counts.baja}</span>
+            <span className="metric-cell-label">Prioridad baja</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="alerts-layout">
+        <div className="card">
+          <div className="card-header">
             <div>
-              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <AlertTriangle size={18} style={{ color: 'var(--critical)' }} />
-                <span>Panel de Alertas Activas ({filteredAlerts.length})</span>
-              </div>
-              <div className="card-subtitle">Alertas prioritarias que requieren monitoreo inmediato</div>
+              <div className="card-title">Panel de alertas activas ({filtered.length})</div>
+              <div className="card-subtitle">Casos que requieren monitoreo o contacto con el socio</div>
             </div>
+            <AlertTriangle size={18} style={{ color: 'var(--riesgo-critico)' }} />
           </div>
 
-          {/* Filtros */}
-          <div className="filters-bar" style={{ marginBottom: 8 }}>
+          <div className="filters-bar" style={{ marginBottom: 16 }}>
+            <Filter size={16} style={{ color: 'var(--coop-texto-secundario)' }} />
             <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-              <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--coop-texto-secundario)' }} />
               <input
                 className="filter-input"
                 style={{ paddingLeft: 40, width: '100%' }}
                 placeholder="Buscar por nombre o palabra clave..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            
-            <select 
-              className="filter-select" 
-              value={priorityFilter} 
-              onChange={e => setPriorityFilter(e.target.value)}
-            >
+            <select className="filter-select" value={prioridadFilter} onChange={(e) => setPrioridadFilter(e.target.value)}>
               <option value="">Todas las prioridades</option>
-              <option value="alta">🔴 Alta / Crítica ({highAlertsCount})</option>
-              <option value="media">🟡 Media ({mediumAlertsCount})</option>
-              <option value="baja">🔵 Baja ({lowAlertsCount})</option>
+              <option value="alta">Alta / Crítica ({counts.alta})</option>
+              <option value="media">Media ({counts.media})</option>
+              <option value="baja">Baja ({counts.baja})</option>
             </select>
-
-            <select 
-              className="filter-select" 
-              value={typeFilter} 
-              onChange={e => setTypeFilter(e.target.value)}
-            >
+            <select className="filter-select" value={tipoFilter} onChange={(e) => setTipoFilter(e.target.value)}>
               <option value="">Todos los tipos</option>
-              <option value="Cambio de categoría">Cambio de categoría (IA)</option>
-              <option value="Atraso detectado">Atraso detectado</option>
-              <option value="Saldo crítico">Saldo crítico</option>
-              <option value="Patrón inusual">Patrón inusual</option>
+              {tipos.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
             </select>
           </div>
 
-          {/* Listado de Alertas */}
-          <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '4px' }}>
-            {filteredAlerts.length === 0 ? (
-              <div className="empty-state" style={{ padding: '80px 20px' }}>
-                <UserCheck size={40} style={{ color: 'var(--success)', opacity: 0.6 }} />
-                <p style={{ marginTop: 12 }}>No hay alertas activas que coincidan con los filtros.</p>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>El comportamiento financiero de los socios está estable.</span>
+          <div style={{ maxHeight: 560, overflowY: 'auto' }}>
+            {filtered.length === 0 ? (
+              <div className="empty-state" style={{ padding: '60px 20px' }}>
+                <UserCheck size={40} style={{ color: 'var(--coop-verde-primario)', opacity: 0.7 }} />
+                <p style={{ marginTop: 12 }}>No hay alertas que coincidan con los filtros.</p>
               </div>
             ) : (
-              filteredAlerts.map(alert => {
-                const priorityClass = alert.prioridad === 'alta' || alert.prioridad === 'critica' ? 'alta' : alert.prioridad === 'media' ? 'media' : 'baja';
-                return (
-                  <div key={alert.id} className="alert-item animate-in" style={{ padding: '16px 20px', marginBottom: 12, alignItems: 'center' }}>
-                    <div className={`alert-icon ${priorityClass}`}>
-                      <AlertTriangle size={18} />
-                    </div>
-                    <div className="alert-content">
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span className="alert-title" style={{ fontSize: '15px', fontWeight: 700 }}>
-                          {alert.socio_nombre}
-                        </span>
-                        <span className={`badge ${priorityClass}`} style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                          {alert.prioridad === 'critica' ? 'crítico' : alert.prioridad}
-                        </span>
-                      </div>
-                      <div className="alert-message" style={{ fontSize: '13.5px', color: 'var(--text-primary)', marginBottom: 6 }}>
-                        {alert.mensaje}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div className="alert-meta" style={{ fontSize: '12px', display: 'flex', gap: 12 }}>
-                          <span>📅 {alert.fecha}</span>
-                          <span>•</span>
-                          <span>📂 Tipo: <strong>{alert.tipo}</strong></span>
-                          {alert.risk_score > 0 && (
-                            <>
-                              <span>•</span>
-                              <span style={{ color: alert.risk_score > 75 ? 'var(--critical)' : alert.risk_score > 40 ? 'var(--warning)' : 'var(--success)' }}>
-                                Score IA: <strong>{alert.risk_score}</strong>
-                              </span>
-                            </>
-                          )}
-                        </div>
-                        <button 
-                          className="back-btn" 
-                          style={{ padding: '5px 12px', fontSize: '12px', background: 'var(--glass-hover)' }}
+              <div className="table-container">
+                <table className="data-table data-table--static">
+                  <thead>
+                    <tr>
+                      <th>Socio</th>
+                      <th>Alerta</th>
+                      <th>Tipo</th>
+                      <th>Prioridad</th>
+                      <th>Score</th>
+                      <th>Fecha</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((alert) => {
+                      const pClass = priorityClass(alert.prioridad);
+                      return (
+                        <tr
+                          key={alert.id}
+                          className="data-table-row--clickable"
                           onClick={() => navigate(`/socios/${alert.socio_id}`)}
                         >
-                          <Brain size={12} style={{ marginRight: 4 }} />
-                          Analizar IA (XAI)
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
+                          <td className="cell-strong">{alert.socio_nombre}</td>
+                          <td className="cell-muted" style={{ maxWidth: 280 }}>{alert.mensaje || '—'}</td>
+                          <td className="cell-muted">{alert.tipo}</td>
+                          <td>
+                            <span className={`badge ${pClass}`}>
+                              {alert.prioridad === 'critica' ? 'crítica' : alert.prioridad}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`badge ${riskBadgeClass(alert.risk_level)}`}>
+                              {alert.risk_score ?? '—'}
+                            </span>
+                          </td>
+                          <td className="cell-muted">{alert.fecha}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn-coop-secondary"
+                              style={{ padding: '4px 10px', fontSize: 12 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/socios/${alert.socio_id}`);
+                              }}
+                            >
+                              <Brain size={12} /> Perfil
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
+
         </div>
 
-        {/* Panel Derecho: Telemetría y estado de la IA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          
-          {/* Card: Estado del Modelo de IA */}
-          <div className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-            <div className="card-header" style={{ marginBottom: 16 }}>
+          <div className="card">
+            <div className="card-header">
               <div>
                 <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Brain size={18} style={{ color: 'var(--accent-light)' }} />
-                  <span>Estado de la IA</span>
+                  <Brain size={18} style={{ color: 'var(--coop-verde-oscuro)' }} />
+                  Estado de la IA
                 </div>
-                <div className="card-subtitle">Métricas de entrenamiento y algoritmos</div>
+                <div className="card-subtitle">Métricas de entrenamiento del modelo</div>
               </div>
-              <Sparkles size={16} style={{ color: 'var(--warning)' }} />
+              <Sparkles size={16} style={{ color: 'var(--coop-acento-dorado)' }} />
             </div>
-
             {modelInfo ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Cpu size={24} style={{ color: 'var(--accent-light)' }} />
+              <>
+                <div className="model-telemetry-card" style={{ marginBottom: 14 }}>
+                  <Cpu size={24} style={{ color: 'var(--coop-verde-primario)' }} />
                   <div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Algoritmo Predictivo</div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{modelInfo.model_name || 'Random Forest'}</div>
+                    <div style={{ fontSize: 12, color: 'var(--coop-texto-secundario)' }}>Algoritmo</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--coop-azul-texto)' }}>
+                      {modelInfo.model_name || 'Random Forest'}
+                    </div>
                   </div>
                 </div>
-
                 <div className="info-row">
-                  <span className="info-label">Precisión General (Accuracy)</span>
-                  <span className="info-value" style={{ color: 'var(--success)' }}>{(modelInfo.accuracy * 100).toFixed(1)}%</span>
-                </div>
-                <div className="info-row">
-                  <span className="info-label">Precisión de Alertas (Precision)</span>
-                  <span className="info-value">{(modelInfo.precision * 100).toFixed(1)}%</span>
+                  <span className="info-label">Accuracy</span>
+                  <span className="info-value" style={{ color: 'var(--coop-verde-primario)' }}>
+                    {((modelInfo.accuracy || 0) * 100).toFixed(1)}%
+                  </span>
                 </div>
                 <div className="info-row">
-                  <span className="info-label">Sensibilidad (Recall)</span>
-                  <span className="info-value">{(modelInfo.recall * 100).toFixed(1)}%</span>
+                  <span className="info-label">Precision</span>
+                  <span className="info-value">{((modelInfo.precision || 0) * 100).toFixed(1)}%</span>
                 </div>
                 <div className="info-row">
-                  <span className="info-label">F1-Score (Equilibrio)</span>
-                  <span className="info-value">{(modelInfo.f1_score * 100).toFixed(1)}%</span>
+                  <span className="info-label">Recall</span>
+                  <span className="info-value">{((modelInfo.recall || 0) * 100).toFixed(1)}%</span>
                 </div>
-                <div className="info-row" style={{ borderBottom: 'none' }}>
-                  <span className="info-label">Socios Analizados</span>
-                  <span className="info-value" style={{ color: 'var(--accent-light)' }}>{modelInfo.total_samples || 500}</span>
+                <div className="info-row" style={{ border: 'none' }}>
+                  <span className="info-label">F1-Score</span>
+                  <span className="info-value">{((modelInfo.f1_score || 0) * 100).toFixed(1)}%</span>
                 </div>
-
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                  <CheckCircle size={12} style={{ color: 'var(--success)' }} />
-                  <span>Modelo entrenado localmente con éxito</span>
-                </div>
-              </div>
+              </>
             ) : (
-              <div className="empty-state">No se cargaron datos del modelo</div>
+              <div className="empty-state"><p>Sin datos del modelo</p></div>
             )}
           </div>
 
-          {/* Card: Guía de Uso Pitch */}
-          <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(139,92,246,0.04) 100%)', borderColor: 'rgba(99,102,241,0.15)' }}>
+          <div className="card pitch-guide-card">
             <div className="card-header" style={{ marginBottom: 12 }}>
-              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '14px' }}>
-                <TrendingUp size={16} style={{ color: 'var(--warning)' }} />
-                <span>Storytelling para el Pitch 💡</span>
+              <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+                <TrendingUp size={16} style={{ color: 'var(--coop-acento-dorado)' }} />
+                Guía para el pitch
               </div>
             </div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <p>
-                <strong>1. Elige un Socio Crítico:</strong> Abre la lista de alertas, filtra por 🔴 <strong>Alta</strong>, y haz clic en <strong>Analizar IA</strong>.
-              </p>
-              <p>
-                <strong>2. Explica el "Por qué" (XAI):</strong> Muestra al jurado la importancia de las variables (Feature Importance). Explica que el riesgo aumentó no por azar, sino por <em>patrones conductuales concretos</em> como la caída del saldo mensual y el aumento de retiros.
-              </p>
-              <p>
-                <strong>3. Acción Preventiva:</strong> Enfatiza que Radar-Mora le permite a CoopTech Tulcán reestructurar deudas de forma proactiva <strong>antes</strong> de caer en mora legal.
-              </p>
-            </div>
+            <p><strong>1. Socio en alerta:</strong> Filtra por prioridad alta y abre el perfil desde la tabla.</p>
+            <p><strong>2. Explica el porqué:</strong> Muestra factores de riesgo y el score en el perfil del socio.</p>
+            <p><strong>3. Acción preventiva:</strong> Radar-Mora permite reestructurar antes de la mora legal.</p>
           </div>
-
         </div>
       </div>
     </div>

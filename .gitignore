@@ -169,8 +169,10 @@ frontend/build/
 backend/*.db
 backend/*.sqlite
 backend/*.sqlite3
+backend/data/
 cooptech.db
 cooptech.db-journal
+*.joblib
 
 # OS files
 .DS_Store

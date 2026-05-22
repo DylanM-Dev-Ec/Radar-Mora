@@ -1,8 +1,9 @@
+import { RISK_COLORS, COOP } from '../theme';
+
 export default function RiskGauge({ score = 0, size = 200 }) {
   const clampedScore = Math.max(0, Math.min(100, score));
   const level = clampedScore <= 30 ? 'Bajo' : clampedScore <= 60 ? 'Medio' : clampedScore <= 80 ? 'Alto' : 'Crítico';
-  const levelColors = { 'Bajo': '#10b981', 'Medio': '#f59e0b', 'Alto': '#f97316', 'Crítico': '#ef4444' };
-  const color = levelColors[level];
+  const color = RISK_COLORS[level];
 
   const cx = size / 2;
   const cy = size / 2 + 10;
@@ -28,10 +29,10 @@ export default function RiskGauge({ score = 0, size = 200 }) {
       <svg width={size} height={size * 0.6} viewBox={`0 0 ${size} ${size * 0.65}`}>
         <defs>
           <linearGradient id={`gaugeGrad-${score}`} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#10b981" />
-            <stop offset="40%" stopColor="#f59e0b" />
-            <stop offset="70%" stopColor="#f97316" />
-            <stop offset="100%" stopColor="#ef4444" />
+            <stop offset="0%" stopColor={RISK_COLORS.Bajo} />
+            <stop offset="40%" stopColor={RISK_COLORS.Medio} />
+            <stop offset="70%" stopColor={RISK_COLORS.Alto} />
+            <stop offset="100%" stopColor={RISK_COLORS.Crítico} />
           </linearGradient>
           <filter id="glow">
             <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -43,7 +44,7 @@ export default function RiskGauge({ score = 0, size = 200 }) {
         </defs>
 
         {/* Background arc */}
-        <path d={bgPath} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} strokeLinecap="round" />
+        <path d={bgPath} fill="none" stroke="#e0e0e0" strokeWidth={strokeWidth} strokeLinecap="round" />
 
         {/* Progress arc */}
         {clampedScore > 0 && (
@@ -55,17 +56,17 @@ export default function RiskGauge({ score = 0, size = 200 }) {
         <circle cx={progArcEnd.x} cy={progArcEnd.y} r={strokeWidth * 0.5} fill={color} filter="url(#glow)" />
 
         {/* Score text */}
-        <text x={cx} y={cy - 8} textAnchor="middle" fill="#f1f5f9" fontSize={size * 0.18} fontWeight="800" fontFamily="Inter">
+        <text x={cx} y={cy - 8} textAnchor="middle" fill={COOP.textoPrincipal} fontSize={size * 0.18} fontWeight="800" fontFamily="Roboto, Segoe UI, sans-serif">
           {clampedScore}
         </text>
-        <text x={cx} y={cy + size * 0.08} textAnchor="middle" fill="#64748b" fontSize={size * 0.06} fontWeight="500" fontFamily="Inter">
+        <text x={cx} y={cy + size * 0.08} textAnchor="middle" fill={COOP.textoSecundario} fontSize={size * 0.06} fontWeight="500" fontFamily="Roboto, Segoe UI, sans-serif">
           de 100
         </text>
 
         {/* Scale labels */}
-        <text x={bgArcStart.x + 4} y={cy + 16} textAnchor="middle" fill="#64748b" fontSize={10} fontFamily="Inter">0</text>
-        <text x={cx} y={cy - radius - strokeWidth - 4} textAnchor="middle" fill="#64748b" fontSize={10} fontFamily="Inter">50</text>
-        <text x={bgArcEnd.x - 4} y={cy + 16} textAnchor="middle" fill="#64748b" fontSize={10} fontFamily="Inter">100</text>
+        <text x={bgArcStart.x + 4} y={cy + 16} textAnchor="middle" fill={COOP.textoSecundario} fontSize={10} fontFamily="Roboto, Segoe UI, sans-serif">0</text>
+        <text x={cx} y={cy - radius - strokeWidth - 4} textAnchor="middle" fill={COOP.textoSecundario} fontSize={10} fontFamily="Roboto, Segoe UI, sans-serif">50</text>
+        <text x={bgArcEnd.x - 4} y={cy + 16} textAnchor="middle" fill={COOP.textoSecundario} fontSize={10} fontFamily="Roboto, Segoe UI, sans-serif">100</text>
       </svg>
 
       <div className={`badge ${level.toLowerCase()}`} style={{ marginTop: -4, fontSize: 14, padding: '5px 16px' }}>
