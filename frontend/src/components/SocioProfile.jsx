@@ -4,7 +4,7 @@ import { ArrowLeft, User, MapPin, Phone, Mail, Calendar, Briefcase, Shield, Ligh
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, Cell } from 'recharts';
 import { sociosAPI, modelAPI } from '../services/api';
 import RiskGauge from './RiskGauge';
-import { RISK_COLORS, COOP, scoreToColor } from '../theme';
+import { RISK_COLORS, COOP, scoreToColor, CHART_GRID, CHART_AXIS } from '../theme';
 
 const RECOMMENDATIONS = {
   'Bajo': { icon: '✅', title: 'Buen comportamiento', text: 'Socio con buen comportamiento crediticio. Mantener seguimiento estándar y considerar para nuevos productos.', color: 'bajo' },
@@ -195,13 +195,13 @@ export default function SocioProfile() {
           </div>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={paymentChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
+              <CartesianGrid {...CHART_GRID} />
+              <XAxis dataKey="name" {...CHART_AXIS} />
+              <YAxis {...CHART_AXIS} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="esperado" name="Esperado" fill="rgba(99, 102, 241, 0.4)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="pagado" name="Pagado" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="esperado" name="Esperado" fill="rgba(0, 150, 64, 0.35)" stroke="none" strokeWidth={0} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="pagado" name="Pagado" stroke="none" strokeWidth={0} radius={[4, 4, 0, 0]}>
                 {paymentChartData.map((entry, i) => (
                   <Cell key={i} fill={entry.atraso > 5 ? RISK_COLORS.Crítico : entry.atraso > 0 ? RISK_COLORS.Medio : RISK_COLORS.Bajo} />
                 ))}

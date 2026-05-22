@@ -199,6 +199,19 @@ h1, h2, h3 {
   color: #ffffff;
 }
 
+.header-nav-badge {
+  margin-left: 6px;
+  background: var(--coop-acento-dorado);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.2;
+}
+
 /* ============ LAYOUT ============ */
 .app-layout {
   display: flex;
@@ -211,7 +224,7 @@ h1, h2, h3 {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 30px;
-  margin-left: var(--sidebar-width);
+  margin-left: 0;
   background: var(--coop-fondo-dashboard);
   min-height: 0;
   transition: var(--transition);
@@ -988,8 +1001,7 @@ h1, h2, h3 {
 }
 
 @media (max-width: 768px) {
-  .sidebar { display: none; }
-  .main-content { margin-left: 0; padding: 20px 16px; }
+  .main-content { padding: 20px 16px; }
   .kpi-grid { grid-template-columns: 1fr; }
   .filters-bar { flex-direction: column; }
   .app-header-nav { display: none; }
@@ -1041,7 +1053,66 @@ h1, h2, h3 {
 }
 
 .recharts-cartesian-grid line {
-  stroke: rgba(0, 0, 0, 0.06) !important;
+  stroke: #9eb5a8 !important;
+  stroke-width: 1.2px;
+}
+
+.recharts-cartesian-axis-line {
+  stroke: var(--coop-verde-oscuro) !important;
+  stroke-width: 2px !important;
+}
+
+.recharts-cartesian-axis-tick-line {
+  stroke: var(--coop-verde-oscuro) !important;
+  stroke-width: 1.5px !important;
+}
+
+.recharts-pie-sector,
+.recharts-bar-rectangle {
+  stroke: none !important;
+  stroke-width: 0 !important;
+}
+
+/* Leyenda del pastel — porcentajes alineados sin líneas guía */
+.pie-legend-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 20px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.pie-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--coop-texto-principal);
+}
+
+.pie-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pie-legend-name {
+  font-weight: 600;
+  color: var(--coop-azul-texto);
+}
+
+.pie-legend-pct {
+  font-weight: 700;
+  color: var(--coop-verde-oscuro);
+}
+
+.pie-legend-count {
+  color: var(--coop-texto-secundario);
+  font-size: 0.78rem;
 }
 
 /* ============ API OFFLINE BANNER ============ */

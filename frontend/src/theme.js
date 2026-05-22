@@ -32,3 +32,27 @@ export function scoreToLevel(score) {
   if (score <= 80) return 'alto';
   return 'critico';
 }
+
+/** Estilos compartidos Recharts — líneas más visibles */
+export const CHART_GRID = {
+  stroke: '#9eb5a8',
+  strokeWidth: 1.2,
+  strokeDasharray: '5 5',
+};
+
+export const CHART_AXIS = {
+  tick: { fontSize: 11, fill: COOP.textoSecundario },
+  axisLine: { stroke: COOP.verdeOscuro, strokeWidth: 2 },
+  tickLine: { stroke: COOP.verdeOscuro, strokeWidth: 1.5 },
+};
+
+export const PIE_STYLE = {
+  paddingAngle: 0,
+  stroke: 'none',
+  strokeWidth: 0,
+};
+
+export const BAR_STYLE = {
+  stroke: 'none',
+  strokeWidth: 0,
+};

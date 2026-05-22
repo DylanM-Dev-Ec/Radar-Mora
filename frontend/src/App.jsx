@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AppHeader from './components/AppHeader';
-import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import SociosList from './components/SociosList';
 import SocioProfile from './components/SocioProfile';
@@ -26,9 +25,7 @@ function App() {
     <Router>
       <div className="app-shell">
         <AppHeader />
-        <div className="app-layout">
-          <Sidebar />
-          <main className="main-content">
+        <main className="main-content">
             {apiOk === false && <ApiOfflineBanner />}
             {apiOk === null && (
               <div className="loading-container" style={{ minHeight: 120 }}>
@@ -44,8 +41,7 @@ function App() {
             <Route path="/alertas" element={<AlertsPanel />} />
             </Routes>
             )}
-          </main>
-        </div>
+        </main>
       </div>
     </Router>
   );

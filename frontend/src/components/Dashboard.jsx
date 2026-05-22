@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, AreaChart, Area, Legend, CartesianGrid,
 } from 'recharts';
 import { dashboardAPI, alertsAPI } from '../services/api';
-import { RISK_COLORS, COOP } from '../theme';
+import { RISK_COLORS, COOP, CHART_GRID, CHART_AXIS, PIE_STYLE } from '../theme';
 
 function formatCurrency(n) {
   if (n == null) return '$0';
@@ -102,15 +102,43 @@ export default function Dashboard() {
   ] : [];
 
   const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-    if (percent < 0.05) return null;
+    if (percent < 0.07) return null;
     const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.52;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
     return (
-      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700}>
-        {`${(percent * 100).toFixed(0)}%`}
+      <text
+        x={x}
+        y={y}
+        fill="#ffffff"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize={13}
+        fontWeight={700}
+        style={{ pointerEvents: 'none' }}
+      >
+        {(percent * 100).toFixed(0)}%
       </text>
+    );
+  };
+
+  const renderPieLegend = ({ payload }) => {
+    if (!payload?.length) return null;
+    return (
+      <ul className="pie-legend-list">
+        {payload.map((entry) => {
+          const item = riskDist.find((r) => r.nivel === entry.value);
+          return (
+            <li key={entry.value} className="pie-legend-item">
+              <span className="pie-legend-dot" style={{ background: entry.color }} />
+              <span className="pie-legend-name">{entry.value}</span>
+              <span className="pie-legend-pct">{item?.porcentaje ?? 0}%</span>
+              <span className="pie-legend-count">({item?.cantidad ?? 0})</span>
+            </li>
+          );
+        })}
+      </ul>
     );
   };
 
@@ -218,27 +246,28 @@ export default function Dashboard() {
                 <div className="card-subtitle">Clasificación del modelo de IA</div>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
                 <Pie
                   data={riskDist}
                   cx="50%"
-                  cy="50%"
-                  innerRadius={65}
-                  outerRadius={105}
+                  cy="44%"
+                  innerRadius={58}
+                  outerRadius={92}
                   dataKey="cantidad"
                   nameKey="nivel"
+                  paddingAngle={0}
                   labelLine={false}
                   label={renderPieLabel}
-                  strokeWidth={2}
-                  stroke="#fff"
+                  stroke="none"
+                  strokeWidth={0}
                 >
                   {riskDist.map((entry, i) => (
                     <Cell key={i} fill={entry.color || RISK_COLORS[entry.nivel]} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend verticalAlign="bottom" formatter={(v) => <span className="legend-text">{v}</span>} />
+                <Legend verticalAlign="bottom" content={renderPieLegend} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -251,16 +280,16 @@ export default function Dashboard() {
               </div>
             </div>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={byAgency} layout="vertical" margin={{ left: 8, right: 12 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="agencia" width={88} tick={{ fontSize: 11 }} />
+              <BarChart data={byAgency} layout="vertical" margin={{ left: 8, right: 16 }}>
+                <CartesianGrid {...CHART_GRID} />
+                <XAxis type="number" {...CHART_AXIS} />
+                <YAxis type="category" dataKey="agencia" width={88} {...CHART_AXIS} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="bajo" name="Bajo" stackId="a" fill={RISK_COLORS.Bajo} />
-                <Bar dataKey="medio" name="Medio" stackId="a" fill={RISK_COLORS.Medio} />
-                <Bar dataKey="alto" name="Alto" stackId="a" fill={RISK_COLORS.Alto} />
-                <Bar dataKey="critico" name="Crítico" stackId="a" fill={RISK_COLORS.Crítico} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="bajo" name="Bajo" stackId="a" fill={RISK_COLORS.Bajo} stroke="none" strokeWidth={0} />
+                <Bar dataKey="medio" name="Medio" stackId="a" fill={RISK_COLORS.Medio} stroke="none" strokeWidth={0} />
+                <Bar dataKey="alto" name="Alto" stackId="a" fill={RISK_COLORS.Alto} stroke="none" strokeWidth={0} />
+                <Bar dataKey="critico" name="Crítico" stackId="a" fill={RISK_COLORS.Crítico} stroke="none" strokeWidth={0} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
