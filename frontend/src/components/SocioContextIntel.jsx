@@ -17,7 +17,7 @@ function formatFecha(iso) {
   if (!iso) return '—';
   try {
     const d = new Date(`${iso}T12:00:00`);
-    return d.toLocaleDateString('es-EC', { day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString('es-EC', { day: 'numeric', month: 'short' });
   } catch {
     return iso;
   }
@@ -26,99 +26,63 @@ function formatFecha(iso) {
 export default function SocioContextIntel({ contexto }) {
   if (!contexto) return null;
 
-  const { zona, fecha_analisis, noticias_sugeridas = [], prediccion_ia: pred, disclaimer } = contexto;
+  const { zona, fecha_analisis, noticias_sugeridas = [], prediccion_ia: pred } = contexto;
   const nivelClass = NIVEL_CLASS[pred?.nivel] || NIVEL_CLASS.Medio;
+  const factoresActivos = (pred?.factores || []).filter((f) => f.activo).slice(0, 4);
+  const noticias = noticias_sugeridas.slice(0, 2);
 
   return (
-    <section className="card context-intel animate-in" style={{ marginBottom: 24 }}>
+    <section className="card context-intel context-intel--compact animate-in">
       <div className="context-intel-header">
-        <div>
-          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Newspaper size={20} style={{ color: 'var(--coop-verde-primario)' }} />
-            Contexto externo y noticias
-          </div>
-          <div className="card-subtitle">
-            Titulares sugeridos para la zona del socio y predicción IA de impago por eventos externos
-          </div>
-        </div>
-        <div className="context-intel-meta">
-          <span className="context-intel-meta-item">
-            <MapPin size={14} />
-            {zona}
+        <div className="context-intel-header-main">
+          <Newspaper size={15} />
+          <span className="context-intel-title">Contexto externo</span>
+          <span className={`badge badge-sm ${(pred?.nivel || 'Medio').toLowerCase().replace('í', 'i')}`}>
+            {pred?.nivel}
           </span>
-          <span className="context-intel-meta-item">Corte {formatFecha(fecha_analisis)}</span>
+        </div>
+        <span className="context-intel-meta-inline">
+          <MapPin size={11} />
+          {zona} · {formatFecha(fecha_analisis)}
+        </span>
+      </div>
+
+      <div className={`context-intel-pred ${nivelClass}`}>
+        <Sparkles size={14} className="context-intel-pred-icon-sm" />
+        <div className="context-intel-pred-main">
+          <p className="context-intel-pred-title">{pred?.titulo}</p>
+          <p className="context-intel-pred-text">{pred?.explicacion}</p>
         </div>
       </div>
 
-      <div className="context-intel-body">
-        <div className={`context-intel-pred ${nivelClass}`}>
-          <div className="context-intel-pred-icon">
-            <Sparkles size={22} />
-          </div>
-          <div className="context-intel-pred-main">
-            <span className="context-intel-pred-kicker">Predicción IA · eventos externos</span>
-            <h3 className="context-intel-pred-title">{pred?.titulo}</h3>
-            <p className="context-intel-pred-text">{pred?.explicacion}</p>
-            <p className="context-intel-pred-rec">
-              <strong>Recomendación:</strong> {pred?.recomendacion}
-            </p>
-          </div>
-          <div className="context-intel-pred-stats">
-            <span className={`badge ${(pred?.nivel || 'Medio').toLowerCase().replace('í', 'i')}`}>
-              {pred?.nivel}
-            </span>
-          </div>
+      {factoresActivos.length > 0 && (
+        <div className="context-intel-chips">
+          {factoresActivos.map((f) => {
+            const Icon = CATEGORY_ICONS[f.tipo] || Info;
+            return (
+              <span key={f.tipo} className="context-intel-chip">
+                <Icon size={11} />
+                {f.etiqueta}
+              </span>
+            );
+          })}
         </div>
+      )}
 
-        <div className="context-intel-factors">
-          <h4 className="context-intel-factors-title">Factores monitoreados</h4>
-          <div className="context-intel-factors-grid">
-            {(pred?.factores || []).map((f) => {
-              const Icon = CATEGORY_ICONS[f.tipo] || Info;
-              const pct = Math.round((f.peso || 0) * 100);
-              return (
-                <div
-                  key={f.tipo}
-                  className={`context-intel-factor ${f.activo ? 'context-intel-factor--active' : ''}`}
-                >
-                  <Icon size={16} />
-                  <span className="context-intel-factor-label">{f.etiqueta}</span>
-                  <div className="context-intel-factor-bar">
-                    <div className="context-intel-factor-fill" style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="context-intel-factor-pct">{pct}%</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="context-intel-news">
-          <h4 className="context-intel-news-title">Noticias sugeridas</h4>
-          <ul className="context-intel-news-list">
-            {noticias_sugeridas.map((n) => {
-              const Icon = CATEGORY_ICONS[n.categoria] || Info;
-              return (
-                <li key={n.id} className="context-intel-news-item">
-                  <div className={`context-intel-news-cat context-intel-news-cat--${n.categoria}`}>
-                    <Icon size={14} />
-                    {n.categoria_label}
-                  </div>
-                  <h5 className="context-intel-news-headline">{n.titulo}</h5>
-                  <p className="context-intel-news-summary">{n.resumen}</p>
-                  <div className="context-intel-news-foot">
-                    <span>{n.fuente}</span>
-                    <span>{formatFecha(n.fecha)}</span>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </div>
-
-      {disclaimer && (
-        <p className="context-intel-disclaimer">{disclaimer}</p>
+      {noticias.length > 0 && (
+        <ul className="context-intel-news-compact">
+          {noticias.map((n) => {
+            const Icon = CATEGORY_ICONS[n.categoria] || Info;
+            return (
+              <li key={n.id} className="context-intel-news-row">
+                <span className={`context-intel-news-cat context-intel-news-cat--${n.categoria}`}>
+                  <Icon size={10} />
+                </span>
+                <span className="context-intel-news-headline">{n.titulo}</span>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </section>
   );
