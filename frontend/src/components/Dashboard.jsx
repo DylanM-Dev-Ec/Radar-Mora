@@ -255,7 +255,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="chart-grid">
+        <div className="chart-grid-equal">
           <div className="card card--chart">
             <div className="card-header">
               <div>
@@ -263,14 +263,14 @@ export default function Dashboard() {
                 <div className="card-subtitle">Clasificación del modelo de IA</div>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+            <ResponsiveContainer width="100%" height={500}>
+              <PieChart margin={{ top: 12, right: 12, bottom: 12, left: 12 }}>
                 <Pie
                   data={riskDist}
                   cx="50%"
-                  cy="44%"
-                  innerRadius={58}
-                  outerRadius={92}
+                  cy="46%"
+                  innerRadius={80}
+                  outerRadius={130}
                   dataKey="cantidad"
                   nameKey="nivel"
                   paddingAngle={0}
@@ -293,14 +293,13 @@ export default function Dashboard() {
             <div className="card-header">
               <div>
                 <div className="card-title">Riesgo por agencia</div>
-                <div className="card-subtitle">Tulcán, Ipiales y sucursales</div>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={500}>
               <BarChart data={byAgency} layout="vertical" margin={{ left: 8, right: 16 }}>
                 <CartesianGrid {...CHART_GRID} />
                 <XAxis type="number" {...CHART_AXIS} />
-                <YAxis type="category" dataKey="agencia" width={88} {...CHART_AXIS} />
+                <YAxis type="category" dataKey="agencia" width={120} interval={0} {...CHART_AXIS} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="bajo" name="Bajo" stackId="a" fill={RISK_COLORS.Bajo} stroke="none" strokeWidth={0} />
