@@ -152,53 +152,52 @@ def _assign_risk_labels(features_df: pd.DataFrame) -> pd.Series:
         sid = row["socio_id"]
         mora_info = mora_map.get(sid, {"dias_mora": 0, "es_moroso": 0})
         dias_mora = mora_info["dias_mora"]
-        es_moroso = mora_info["es_moroso"]
         
         score = 0
         
         # 1. Dias de mora (factor directo)
-        if dias_mora > 60:
-            score += 45
-        elif dias_mora > 30:
+        if dias_mora > 90:
             score += 35
-        elif dias_mora > 0:
+        elif dias_mora > 60:
             score += 25
+        elif dias_mora > 30:
+            score += 15
+        elif dias_mora > 0:
+            score += 8
             
         # 2. Alertas de comportamiento
         if row["alerta_critica_ia"] == 1:
-            score += 30
+            score += 25
         if row["alerta_retiro_ahorros"] == 1:
-            score += 15
+            score += 12
         if row["alerta_caida_actividad"] == 1:
-            score += 15
+            score += 12
             
         # 3. Saldo disponible en cuenta de ahorros (bajo saldo = mas riesgo)
         saldo = row["saldo_disponible"]
         if saldo < 10.0:
-            score += 10
+            score += 8
         elif saldo < 50.0:
-            score += 5
+            score += 4
             
         # 4. Proporción de ingresos vs egresos
         ratio = row["ratio_ingreso_egreso"]
-        if ratio < 0.8:
-            score += 10
-        elif ratio < 1.0:
-            score += 5
+        if ratio < 0.9:
+            score += 8
+        elif ratio < 1.1:
+            score += 4
             
-        # Clasificar en los 4 niveles
-        if score >= 50 or es_moroso == 1:
-            if dias_mora > 30 or row["alerta_critica_ia"] == 1:
-                labels.append("Critico")
-            else:
-                labels.append("Alto")
-        elif score >= 20:
+        # Clasificar con umbrales calibrados
+        if score >= 63:
+            labels.append("Crítico")
+        elif score >= 57:
+            labels.append("Alto")
+        elif score >= 43:
             labels.append("Medio")
         else:
             labels.append("Bajo")
             
-    # Mapear "Critico" con acento para compatibilidad con frontend
-    return pd.Series([l.replace("Critico", "Crítico") for l in labels])
+    return pd.Series(labels)
 
 
 def _compute_risk_score(features_row: dict, model, feature_names: list) -> float:
