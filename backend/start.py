@@ -44,6 +44,21 @@ def main():
         print(f"   Pagos: {get_table_count('pagos')}")
         print(f"   Transacciones: {get_table_count('transacciones')}")
 
+    # Paso 1b: Importar dataset maestro real si existe el CSV
+    csv_path = os.path.join(os.path.dirname(backend_dir), "dataset_maestro_dashboard.csv")
+    if os.path.exists(csv_path):
+        from database import execute_query_one
+        has_maestro = execute_query_one(
+            "SELECT 1 as ok FROM sqlite_master WHERE type='table' AND name='dataset_maestro'"
+        )
+        if not has_maestro:
+            print("\n📊 CSV de producción detectado. Importando dataset maestro...")
+            try:
+                from import_real_data import main as import_maestro
+                import_maestro()
+            except Exception as e:
+                print(f"   ⚠ No se pudo importar dataset maestro: {e}")
+
     # Paso 2: Entrenar modelo si no existe
     if not model_exists():
         print("\n🤖 Modelo no encontrado. Entrenando modelo de riesgo...")

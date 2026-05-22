@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { dashboardAPI, alertsAPI } from '../services/api';
 import { RISK_COLORS, COOP, CHART_GRID, CHART_AXIS, PIE_STYLE } from '../theme';
+import DashboardExtendedStats from './DashboardExtendedStats';
 
 function formatCurrency(n) {
   if (n == null) return '$0';
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const [trend, setTrend] = useState([]);
   const [byAgency, setByAgency] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [extendedStats, setExtendedStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -74,6 +76,10 @@ export default function Dashboard() {
         }
       })
       .catch(() => { if (!cancelled) setAlerts([]); });
+
+    dashboardAPI.getExtendedStats()
+      .then((ext) => { if (!cancelled) setExtendedStats(ext); })
+      .catch(() => { if (!cancelled) setExtendedStats(null); });
 
     return () => { cancelled = true; };
   }, []);
@@ -371,6 +377,9 @@ export default function Dashboard() {
                         {alert.tipo}
                         {alert.mensaje && ` · ${alert.mensaje.length > 55 ? `${alert.mensaje.slice(0, 55)}…` : alert.mensaje}`}
                       </div>
+                      {alert.fecha && (
+                        <div className="alert-meta">{alert.fecha} · Score: {alert.risk_score}</div>
+                      )}
                     </div>
                     <span className={`badge ${(alert.risk_level || '').toLowerCase().replace('í', 'i')}`}>
                       {alert.risk_score}
@@ -382,6 +391,8 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
+
+      <DashboardExtendedStats extendedStats={extendedStats} />
     </div>
   );
 }

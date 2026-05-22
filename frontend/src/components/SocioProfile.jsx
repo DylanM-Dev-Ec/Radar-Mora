@@ -298,6 +298,46 @@ export default function SocioProfile() {
         </div>
       </div>
 
+      {/* Tabla detalle de cuotas */}
+      {payments.length > 0 && (
+        <div className="card animate-in" style={{ marginTop: 24 }}>
+          <div className="card-header">
+            <div>
+              <div className="card-title">Detalle de cuotas</div>
+              <div className="card-subtitle">Últimas cuotas: esperado, pagado y días de atraso</div>
+            </div>
+          </div>
+          <div className="table-container">
+            <table className="data-table data-table--static">
+              <thead>
+                <tr>
+                  <th>Cuota</th>
+                  <th>Esperado</th>
+                  <th>Pagado</th>
+                  <th>Atraso (días)</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p, i) => {
+                  const atraso = p.dias_atraso || 0;
+                  const estado = atraso > 5 ? 'critico' : atraso > 0 ? 'medio' : 'bajo';
+                  return (
+                    <tr key={i}>
+                      <td className="cell-muted">#{p.num_cuota ?? i + 1}</td>
+                      <td className="cell-strong">${(p.monto_esperado || 0).toLocaleString()}</td>
+                      <td className="cell-strong">${(p.monto_pagado || 0).toLocaleString()}</td>
+                      <td className="cell-muted">{atraso}</td>
+                      <td><span className={`badge ${estado}`}>{atraso > 0 ? 'Atrasado' : 'Al día'}</span></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Credits Summary */}
       {creditos.length > 0 && (
         <div className="card animate-in" style={{ marginTop: 24 }}>

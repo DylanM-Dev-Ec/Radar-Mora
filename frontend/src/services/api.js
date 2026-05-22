@@ -40,6 +40,7 @@ export const dashboardAPI = {
   getRiskDistribution: () => fetchJSON(`${API_BASE}/dashboard/risk-distribution`),
   getTrend: () => fetchJSON(`${API_BASE}/dashboard/trend`),
   getRiskByAgency: () => fetchJSON(`${API_BASE}/dashboard/risk-by-agency`),
+  getExtendedStats: () => fetchJSON(`${API_BASE}/dashboard/extended-stats`),
 };
 
 export const sociosAPI = {
