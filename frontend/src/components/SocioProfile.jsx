@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, User, MapPin, Phone, Mail, Calendar, Briefcase, Shield, Lightbulb } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Phone, Mail, Calendar, Briefcase, Shield, Lightbulb, MessageCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, Cell } from 'recharts';
 import { sociosAPI, modelAPI } from '../services/api';
 import RiskGauge from './RiskGauge';
@@ -91,6 +91,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function SocioProfile() {
   const { id } = useParams();
   const [data, setData] = useState(null);
+  const [showContactOptions, setShowContactOptions] = useState(false);
   const [payments, setPayments] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [balanceHistory, setBalanceHistory] = useState([]);
@@ -179,9 +180,130 @@ export default function SocioProfile() {
           </h3>
           <p>{rec.text}</p>
           {(level === 'Alto' || level === 'Crítico') && (
-            <button type="button" className="btn-coop-primary" style={{ marginTop: 14, maxWidth: 320 }}>
-              Contactar para Reestructuración
-            </button>
+            <>
+              <button 
+                type="button" 
+                className="btn-coop-primary" 
+                style={{ 
+                  marginTop: 14, 
+                  maxWidth: 320, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: 8,
+                  backgroundColor: showContactOptions ? 'var(--coop-verde-oscuro)' : ''
+                }}
+                onClick={() => setShowContactOptions(!showContactOptions)}
+              >
+                <Phone size={16} /> {showContactOptions ? 'Ocultar Opciones de Contacto' : 'Contactar para Reestructuración'}
+              </button>
+              
+              {showContactOptions && (
+                <div 
+                  className="animate-in"
+                  style={{ 
+                    marginTop: 16, 
+                    padding: 16, 
+                    background: 'rgba(255, 255, 255, 0.95)', 
+                    border: '1px solid rgba(0, 150, 64, 0.15)', 
+                    borderRadius: 12,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                    maxWidth: 500
+                  }}
+                >
+                  <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--coop-azul-texto)' }}>
+                    Canales de Cobranza Preventiva Directa (Reestructuración)
+                  </h4>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+                    {/* WhatsApp */}
+                    <a 
+                      href={`https://wa.me/${info.telefono ? (info.telefono.startsWith('0') ? '593' + info.telefono.substring(1) : info.telefono) : ''}?text=${encodeURIComponent(
+                        `Estimado(a) *${info.nombre}*, le saludamos de la *Cooperativa Tulcán*. Nos ponemos en contacto con usted en referencia a su crédito actual para ofrecerle alternativas viables de *Reestructuración* que le permitan ajustar sus cuotas mensuales a su presupuesto y evitar inconvenientes con su historial crediticio. Por favor, comuníquese con nosotros a la brevedad posible para agendar una cita virtual o en agencia.`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 8, 
+                        padding: '10px 12px', 
+                        background: '#25D366', 
+                        color: 'white', 
+                        borderRadius: 8, 
+                        fontWeight: 600, 
+                        fontSize: 12, 
+                        textDecoration: 'none',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 4px rgba(37,211,102,0.2)',
+                        transition: 'transform 0.2s'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
+                      <MessageCircle size={16} /> WhatsApp
+                    </a>
+
+                    {/* Phone Call */}
+                    <a 
+                      href={`tel:${info.telefono || ''}`}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 8, 
+                        padding: '10px 12px', 
+                        background: 'var(--coop-verde-primario)', 
+                        color: 'white', 
+                        borderRadius: 8, 
+                        fontWeight: 600, 
+                        fontSize: 12, 
+                        textDecoration: 'none',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 4px rgba(0,150,64,0.2)',
+                        transition: 'transform 0.2s'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
+                      <Phone size={16} /> Llamada Directa
+                    </a>
+
+                    {/* Email */}
+                    <a 
+                      href={`mailto:${info.email || ''}?subject=Oportunidad%20de%20Reestructuraci%C3%B3n%20de%20Cr%C3%A9dito%20-%20Cooperativa%20Tulc%C3%A1n&body=${encodeURIComponent(
+                        `Estimado(a) ${info.nombre},\n\nLe saludamos cordialmente de parte de la Cooperativa Tulcán.\n\nNos ponemos en contacto con usted en referencia a su crédito activo actual. Nuestro sistema inteligente ha detectado oportunidades para apoyarle en su salud financiera, y nos gustaría ofrecerle alternativas viables de Reestructuración de Crédito que le permitan ajustar sus pagos mensuales a su capacidad de pago actual y mantener un excelente récord crediticio en la SEPS.\n\nPor favor, póngase en contacto con su asesor asignado llamando a nuestros números oficiales o respondiendo directamente a este correo electrónico.\n\nAtentamente,\nDepartamento de Gestión de Riesgos\nCooperativa Tulcán`
+                      )}`}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 8, 
+                        padding: '10px 12px', 
+                        background: 'var(--coop-azul-texto)', 
+                        color: 'white', 
+                        borderRadius: 8, 
+                        fontWeight: 600, 
+                        fontSize: 12, 
+                        textDecoration: 'none',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 4px rgba(0,43,91,0.2)',
+                        transition: 'transform 0.2s'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
+                      <Mail size={16} /> Correo Electrónico
+                    </a>
+                  </div>
+                  
+                  <div style={{ fontSize: 11, color: 'var(--coop-texto-secundario)', background: 'rgba(0,0,0,0.02)', padding: '8px 10px', borderRadius: 6, borderLeft: '3px solid var(--coop-acento-dorado)' }}>
+                    ℹ️ <strong>Nota de cobrador:</strong> Se pre-cargará una plantilla formal estructurada para agilizar el contacto institucional. Asegúrese de documentar la gestión una vez finalizada.
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
