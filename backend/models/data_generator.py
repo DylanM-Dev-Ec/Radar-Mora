@@ -88,11 +88,25 @@ DESCRIPCIONES_TRANSACCION = {
 # ─────────────────────────────── Helpers ───────────────────────────────
 
 def _random_cedula() -> str:
-    """Genera una cédula ecuatoriana ficticia de 10 dígitos."""
-    provincia = random.choice(["04", "10", "08", "17", "01"])
+    """Genera una cédula ecuatoriana válida de 10 dígitos."""
+    import random
+    provincia = random.choice(["04", "10", "17", "05", "18", "06", "02"])
     resto = "".join([str(random.randint(0, 9)) for _ in range(7)])
-    verificador = str(random.randint(0, 9))
-    return f"{provincia}{resto}{verificador}"
+    prefix = f"{provincia}{resto}"
+    
+    # Calcular dígito de control ecuatoriano
+    total = 0
+    for idx, char in enumerate(prefix):
+        val = int(char)
+        if idx % 2 == 0:
+            val *= 2
+            if val >= 10:
+                val -= 9
+        total += val
+        
+    rem = total % 10
+    checksum = 0 if rem == 0 else 10 - rem
+    return f"{prefix}{checksum}"
 
 
 def _random_phone() -> str:

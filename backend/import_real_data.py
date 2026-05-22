@@ -34,6 +34,52 @@ AGENCIAS = {
     706: "Agencia Guaranda"       # ~7 socios
 }
 
+# Mapeo de agencias a códigos de provincia en Ecuador
+# Carchi: 04, Imbabura: 10, Pichincha: 17, Cotopaxi: 05, Tungurahua: 18, Chimborazo: 06, Bolívar: 02
+AGENCIA_PROVINCIAS = {
+    "Agencia Tulcán (Matriz)": "04",
+    "Agencia Julio Andrade": "04",
+    "Agencia San Gabriel": "04",
+    "Agencia El Ángel": "04",
+    "Agencia Huaca": "04",
+    "Agencia Ibarra": "10",
+    "Agencia Otavalo": "10",
+    "Agencia Cayambe": "10",  # Cayambe grouped with Imbabura in demographic panels
+    "Agencia Quito": "17",
+    "Agencia Quito Sur": "17",
+    "Agencia Quito Norte": "17",
+    "Agencia Sangolquí": "17",
+    "Agencia Latacunga": "05",
+    "Agencia Ambato": "18",
+    "Agencia Riobamba": "06",
+    "Agencia Guaranda": "02"
+}
+
+def generate_valid_cedula(socio_id, agencia_name):
+    prov_code = "04"
+    for ag, code in AGENCIA_PROVINCIAS.items():
+        if ag in agencia_name:
+            prov_code = code
+            break
+            
+    serial = f"{(int(socio_id) % 10000000):07d}"
+    prefix = prov_code + serial
+    
+    # Algoritmo de validación de cédula de Ecuador (Módulo 10)
+    total = 0
+    for idx, char in enumerate(prefix):
+        val = int(char)
+        if idx % 2 == 0:  # Posiciones impares (1, 3, 5, 7, 9)
+            val *= 2
+            if val >= 10:
+                val -= 9
+        total += val
+        
+    rem = total % 10
+    checksum = 0 if rem == 0 else 10 - rem
+    
+    return prefix + str(checksum)
+
 def get_agencia(nro_oficina):
     try:
         of_id = int(nro_oficina)
@@ -219,7 +265,7 @@ def main():
         estado = "Activo"
 
         socios_to_insert.append((
-            cliente_id, nombre, str(cliente_id), edad, ocupacion,
+            cliente_id, nombre, generate_valid_cedula(cliente_id, agencia), edad, ocupacion,
             fecha_ingreso, agencia, telefono, email, estado
         ))
 
