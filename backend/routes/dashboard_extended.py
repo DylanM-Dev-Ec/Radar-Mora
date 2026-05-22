@@ -4,6 +4,7 @@ dashboard_extended.py - Estadisticas avanzadas (dataset maestro de produccion).
 import time
 from fastapi import APIRouter
 from database import execute_query, execute_query_one
+from routes.dashboard_extended_synthetic import get_extended_stats_synthetic
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -148,7 +149,7 @@ def get_extended_stats():
     """Retorna estadísticas extendidas y avanzadas basadas en el dataset maestro con caché."""
     global _EXTENDED_STATS_CACHE, _EXTENDED_STATS_CACHE_TIMESTAMP
     if not _table_exists("dataset_maestro"):
-        return _EMPTY_EXTENDED
+        return get_extended_stats_synthetic()
     now = time.time()
     if _EXTENDED_STATS_CACHE is not None and (now - _EXTENDED_STATS_CACHE_TIMESTAMP) < CACHE_DURATION:
         return _EXTENDED_STATS_CACHE
@@ -728,6 +729,7 @@ def get_extended_stats():
     mora_por_dia_pago.sort(key=lambda x: pago_order.get(x["dia_pago"], 99))
 
     result_data = {
+        "source": "production",
         "mora_por_tipo": mora_por_tipo,
         "mora_por_actividad": mora_por_actividad,
         "por_genero": por_genero,

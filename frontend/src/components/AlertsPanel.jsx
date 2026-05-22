@@ -156,6 +156,7 @@ export default function AlertsPanel() {
                   <thead>
                     <tr>
                       <th>Socio</th>
+                      <th>Alerta</th>
                       <th>Tipo</th>
                       <th>Prioridad</th>
                       <th>Score</th>
@@ -173,6 +174,7 @@ export default function AlertsPanel() {
                           onClick={() => navigate(`/socios/${alert.socio_id}`)}
                         >
                           <td className="cell-strong">{alert.socio_nombre}</td>
+                          <td className="cell-muted" style={{ maxWidth: 280 }}>{alert.mensaje || '—'}</td>
                           <td className="cell-muted">{alert.tipo}</td>
                           <td>
                             <span className={`badge ${pClass}`}>

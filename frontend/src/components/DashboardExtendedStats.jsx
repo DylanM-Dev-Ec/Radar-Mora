@@ -54,30 +54,46 @@ function moraBarColor(tasa) {
   return 'var(--riesgo-bajo)';
 }
 
-export default function DashboardExtendedStats({ extendedStats }) {
+export default function DashboardExtendedStats({ extendedStats, loading = false }) {
   const [showAllActivities, setShowAllActivities] = useState(false);
   const [activeTab, setActiveTab] = useState('portfolio');
 
   const hasData = extendedStats && (
     (extendedStats.mora_por_tipo?.length || 0) > 0
     || (extendedStats.mora_por_actividad?.length || 0) > 0
+    || (extendedStats.mora_por_zona?.length || 0) > 0
   );
 
-  if (!hasData) {
+  const sourceLabel = extendedStats?.source === 'production'
+    ? 'Dataset de producción'
+    : 'Cartera sintética (demo)';
+
+  if (loading) {
     return (
-      <section className="dashboard-section dashboard-section--extended">
+      <section className="dashboard-section dashboard-section--extended" id="estadisticas-avanzadas">
         <div className="section-heading">
           <TrendingUp size={20} className="section-heading-icon" />
           <div>
             <h2>Estadísticas avanzadas de cartera</h2>
-            <p>
-              Requiere el dataset de producción. Coloque <code>dataset_maestro_dashboard.csv</code> en la raíz del proyecto y ejecute{' '}
-              <code>python backend/import_real_data.py</code>.
-            </p>
+            <p>Cargando análisis demográfico y tablas de morosidad…</p>
           </div>
         </div>
-        <div className="card card--info-extended">
-          <p>Sin datos del maestro cargados. Las métricas demográficas y tablas de mora por actividad aparecerán tras importar el CSV.</p>
+        <div className="loading-container" style={{ minHeight: 160 }}>
+          <div className="spinner" />
+        </div>
+      </section>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <section className="dashboard-section dashboard-section--extended" id="estadisticas-avanzadas">
+        <div className="section-heading">
+          <TrendingUp size={20} className="section-heading-icon" />
+          <div>
+            <h2>Estadísticas avanzadas de cartera</h2>
+            <p>No hay créditos activos para analizar. Inicie el backend con <code>python start.py</code>.</p>
+          </div>
         </div>
       </section>
     );
@@ -85,12 +101,12 @@ export default function DashboardExtendedStats({ extendedStats }) {
 
   return (
     <>
-      <section className="dashboard-section dashboard-section--extended">
+      <section className="dashboard-section dashboard-section--extended" id="estadisticas-avanzadas">
         <div className="section-heading">
           <TrendingUp size={20} className="section-heading-icon" />
           <div>
             <h2>Estadísticas avanzadas de cartera</h2>
-            <p>Métricas del dataset maestro: portafolio, perfil demográfico y comportamiento crediticio</p>
+            <p>Portafolio, perfil demográfico y comportamiento crediticio · <span className="extended-source-badge">{sourceLabel}</span></p>
           </div>
         </div>
 

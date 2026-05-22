@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [byAgency, setByAgency] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [extendedStats, setExtendedStats] = useState(null);
+  const [extendedLoading, setExtendedLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -78,8 +79,18 @@ export default function Dashboard() {
       .catch(() => { if (!cancelled) setAlerts([]); });
 
     dashboardAPI.getExtendedStats()
-      .then((ext) => { if (!cancelled) setExtendedStats(ext); })
-      .catch(() => { if (!cancelled) setExtendedStats(null); });
+      .then((ext) => {
+        if (!cancelled) {
+          setExtendedStats(ext);
+          setExtendedLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setExtendedStats(null);
+          setExtendedLoading(false);
+        }
+      });
 
     return () => { cancelled = true; };
   }, []);
@@ -392,7 +403,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <DashboardExtendedStats extendedStats={extendedStats} />
+      <DashboardExtendedStats extendedStats={extendedStats} loading={extendedLoading} />
     </div>
   );
 }
