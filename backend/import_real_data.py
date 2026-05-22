@@ -199,6 +199,7 @@ def main():
             monto_pagado REAL DEFAULT 0,
             dias_atraso INTEGER DEFAULT 0,
             estado TEXT NOT NULL,
+            accion_preventiva TEXT DEFAULT NULL,
             FOREIGN KEY (credito_id) REFERENCES creditos(id)
         );
 
@@ -381,29 +382,39 @@ def main():
         elapsed_months = (proc_date.year - fecha_des.year) * 12 + (proc_date.month - fecha_des.month)
         elapsed_months = max(1, elapsed_months)
 
-        # Generar pagos mensuales
-        for cuota_idx in range(1, elapsed_months + 1):
+        # Generar pagos mensuales (incluyendo cuotas futuras pendientes para creditos activos)
+        for cuota_idx in range(1, plazo + 1):
             fecha_esp = fecha_des + relativedelta(months=cuota_idx)
             fecha_esp_str = fecha_esp.strftime("%Y-%m-%d")
 
-            # Determinar si esta cuota está en mora
-            is_overdue = (cuota_idx > (elapsed_months - cuotas_atra)) and (dias_mora > 0)
-            
-            if is_overdue:
-                estado_pago = "Atrasado"
+            if cuota_idx <= elapsed_months:
+                # Determinar si esta cuota está en mora
+                is_overdue = (cuota_idx > (elapsed_months - cuotas_atra)) and (dias_mora > 0)
+                
+                if is_overdue:
+                    estado_pago = "Atrasado"
+                    fecha_pago_str = None
+                    monto_pagado = 0.0
+                    atraso = dias_mora
+                else:
+                    estado_pago = "Pagado"
+                    # Pequeña variación realista en fecha de pago
+                    fecha_pag = fecha_esp + timedelta(days=np.random.randint(-3, 6))
+                    fecha_pago_str = fecha_pag.strftime("%Y-%m-%d")
+                    monto_pagado = cuota_mensual
+                    atraso = max(0, (fecha_pag - fecha_esp).days)
+            else:
+                # Si el crédito ya está pagado en su estado general, no generamos cuotas futuras
+                if estado == "Pagado":
+                    continue
+                # Cuotas futuras pendientes
+                estado_pago = "Pendiente"
                 fecha_pago_str = None
                 monto_pagado = 0.0
-                atraso = dias_mora
-            else:
-                estado_pago = "Pagado"
-                # Pequeña variación realista en fecha de pago
-                fecha_pag = fecha_esp + timedelta(days=np.random.randint(-3, 6))
-                fecha_pago_str = fecha_pag.strftime("%Y-%m-%d")
-                monto_pagado = cuota_mensual
-                atraso = max(0, (fecha_pag - fecha_esp).days)
+                atraso = 0
 
             pagos_to_insert.append((
-                op_id, cuota_idx, fecha_esp_str, fecha_pago_str, cuota_mensual, monto_pagado, atraso, estado_pago
+                op_id, cuota_idx, fecha_esp_str, fecha_pago_str, cuota_mensual, monto_pagado, atraso, estado_pago, None
             ))
 
         # 6. Generar transacciones realistas para el socio a partir de sus estadísticas mensuales
@@ -445,8 +456,8 @@ def main():
         # Insertar en lotes periódicamente para optimizar memoria
         if len(pagos_to_insert) >= 50000:
             cursor.executemany("""
-                INSERT INTO pagos (credito_id, num_cuota, fecha_esperada, fecha_pago, monto_esperado, monto_pagado, dias_atraso, estado)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO pagos (credito_id, num_cuota, fecha_esperada, fecha_pago, monto_esperado, monto_pagado, dias_atraso, estado, accion_preventiva)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, pagos_to_insert)
             conn.commit()
             pagos_to_insert = []
@@ -462,8 +473,8 @@ def main():
     # Insertar remanentes
     if pagos_to_insert:
         cursor.executemany("""
-            INSERT INTO pagos (credito_id, num_cuota, fecha_esperada, fecha_pago, monto_esperado, monto_pagado, dias_atraso, estado)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO pagos (credito_id, num_cuota, fecha_esperada, fecha_pago, monto_esperado, monto_pagado, dias_atraso, estado, accion_preventiva)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, pagos_to_insert)
     if transacciones_to_insert:
         cursor.executemany("""

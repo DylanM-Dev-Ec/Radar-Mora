@@ -2,7 +2,7 @@
 alerts.py - Endpoints de alertas para CoopTech Tulcán.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Body, Path
 from database import execute_query
 from models.risk_model import predict_all, model_exists
 
@@ -186,3 +186,93 @@ def get_model_info():
     """Retorna información y métricas del modelo."""
     from models.risk_model import get_model_info
     return get_model_info()
+
+
+@router.get("/alerts/preventive")
+def get_preventive_alerts():
+    """Retorna los pagos futuros a vencer en los próximos 15 días de socios de alto riesgo."""
+    alerts = []
+    
+    if not model_exists():
+        return alerts
+
+    # 1. Obtener predicciones de riesgo
+    risks = predict_all()
+    high_risk_socios = {r["socio_id"]: r for r in risks if r["risk_level"] in ("Crítico", "Alto")}
+    
+    if not high_risk_socios:
+        return alerts
+
+    # 2. Consultar cuotas pendientes en el rango de fechas (2026-05-22 al 2026-06-06)
+    query = """
+        SELECT 
+            p.id as pago_id, 
+            p.num_cuota, 
+            p.fecha_esperada, 
+            p.monto_esperado, 
+            p.accion_preventiva,
+            s.id as socio_id, 
+            s.nombre as socio_nombre, 
+            s.cedula as socio_cedula,
+            s.telefono as socio_telefono, 
+            s.email as socio_email, 
+            s.agencia as socio_agencia,
+            c.monto as credito_monto, 
+            c.tipo as credito_tipo
+        FROM pagos p
+        JOIN creditos c ON p.credito_id = c.id
+        JOIN socios s ON c.socio_id = s.id
+        WHERE p.estado = 'Pendiente' 
+          AND p.fecha_esperada BETWEEN '2026-05-22' AND '2026-06-06'
+          AND s.estado = 'Activo'
+    """
+    rows = execute_query(query)
+    
+    for r in rows:
+        soc_id = r["socio_id"]
+        if soc_id in high_risk_socios:
+            risk_info = high_risk_socios[soc_id]
+            alerts.append({
+                "pago_id": r["pago_id"],
+                "num_cuota": r["num_cuota"],
+                "fecha_esperada": r["fecha_esperada"],
+                "monto_esperado": r["monto_esperado"],
+                "accion_preventiva": r["accion_preventiva"],
+                "socio_id": soc_id,
+                "socio_nombre": r["socio_nombre"],
+                "socio_cedula": r["socio_cedula"],
+                "socio_telefono": r["socio_telefono"],
+                "socio_email": r["socio_email"],
+                "socio_agencia": r["socio_agencia"],
+                "credito_monto": r["credito_monto"],
+                "credito_tipo": r["credito_tipo"],
+                "risk_score": risk_info["risk_score"],
+                "risk_level": risk_info["risk_level"]
+            })
+            
+    # Ordenar por nivel de riesgo (Crítico > Alto) y luego por fecha esperada más cercana
+    level_order = {"Crítico": 0, "Alto": 1}
+    alerts.sort(key=lambda x: (level_order.get(x["risk_level"], 2), x["fecha_esperada"]))
+    
+    return alerts
+
+
+@router.post("/alerts/preventive/{pago_id}/action")
+def save_preventive_action(
+    pago_id: int = Path(..., description="ID del pago"),
+    payload: dict = Body(..., description="Cuerpo con la acción preventiva")
+):
+    """Registra una acción preventiva tomada para una cuota próxima a vencer."""
+    action = payload.get("action")
+    if not action:
+        raise HTTPException(status_code=400, detail="El campo 'action' es obligatorio.")
+        
+    from database import execute_write, execute_query_one
+    
+    # Comprobar que el pago existe
+    pago = execute_query_one("SELECT 1 FROM pagos WHERE id = ?", (pago_id,))
+    if not pago:
+        raise HTTPException(status_code=404, detail=f"No se encontró el pago con ID {pago_id}.")
+        
+    execute_write("UPDATE pagos SET accion_preventiva = ? WHERE id = ?", (action, pago_id))
+    return {"status": "ok", "message": "Acción preventiva guardada con éxito."}

@@ -7,6 +7,25 @@ import { scoreToColor, scoreToLevel } from '../theme';
 const getRiskColor = scoreToColor;
 const getRiskLevel = scoreToLevel;
 
+const AGENCIES = [
+  { value: "Agencia Ambato", label: "Ambato" },
+  { value: "Agencia Cayambe", label: "Cayambe" },
+  { value: "Agencia El Ángel", label: "El Ángel" },
+  { value: "Agencia Guaranda", label: "Guaranda" },
+  { value: "Agencia Huaca", label: "Huaca" },
+  { value: "Agencia Ibarra", label: "Ibarra" },
+  { value: "Agencia Julio Andrade", label: "Julio Andrade" },
+  { value: "Agencia Latacunga", label: "Latacunga" },
+  { value: "Agencia Otavalo", label: "Otavalo" },
+  { value: "Agencia Quito", label: "Quito" },
+  { value: "Agencia Quito Norte", label: "Quito Norte" },
+  { value: "Agencia Quito Sur", label: "Quito Sur" },
+  { value: "Agencia Riobamba", label: "Riobamba" },
+  { value: "Agencia San Gabriel", label: "San Gabriel" },
+  { value: "Agencia Sangolquí", label: "Sangolquí" },
+  { value: "Agencia Tulcán (Matriz)", label: "Tulcán (Matriz)" }
+];
+
 export default function SociosList() {
   const navigate = useNavigate();
   const [socios, setSocios] = useState([]);
@@ -72,11 +91,11 @@ export default function SociosList() {
         </select>
         <select className="filter-select" value={agencyFilter} onChange={e => { setAgencyFilter(e.target.value); setPage(1); }}>
           <option value="">Todas las agencias</option>
-          <option value="Tulcán Centro">Tulcán Centro</option>
-          <option value="Ibarra">Ibarra</option>
-          <option value="San Gabriel">San Gabriel</option>
-          <option value="Huaca">Huaca</option>
-          <option value="Bolívar">Bolívar</option>
+          {AGENCIES.map(agency => (
+            <option key={agency.value} value={agency.value}>
+              {agency.label}
+            </option>
+          ))}
         </select>
         <select className="filter-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
           <option value="risk_score">Mayor riesgo</option>
@@ -115,7 +134,7 @@ export default function SociosList() {
                       <tr key={socio.id} onClick={() => navigate(`/socios/${socio.id}`)}>
                         <td className="cell-strong">{socio.nombre}</td>
                         <td className="cell-muted">{socio.cedula}</td>
-                        <td className="cell-muted">{socio.agencia}</td>
+                        <td className="cell-muted">{socio.agencia ? socio.agencia.replace(/^Agencia\s+/i, '') : ''}</td>
                         <td className="cell-strong">${(socio.monto || socio.credito_activo || 0).toLocaleString()}</td>
                         <td>
                           <div className="risk-bar">

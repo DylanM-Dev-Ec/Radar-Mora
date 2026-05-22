@@ -20,7 +20,59 @@ function getRiskLevel(score) {
   return 'Crítico';
 }
 
+function getImpactColor(impact) {
+  if (impact === 'negativo') return RISK_COLORS.Crítico;
+  if (impact === 'positivo') return RISK_COLORS.Bajo;
+  return RISK_MIDDLE_COLOR_OR_DEFAULT(impact);
+}
+
+// Fallback for middle color matching system
+function RISK_MIDDLE_COLOR_OR_DEFAULT(impact) {
+  return RISK_COLORS.Medio;
+}
+
 const getBarColor = scoreToColor;
+
+function formatFactorValue(name, value) {
+  if (value === undefined || value === null) return '—';
+  
+  // Dollar fields
+  if (['saldo_disponible', 'volumen_total', 'ingresos_socio', 'egresos_socio'].includes(name)) {
+    return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  
+  // Trend fields
+  if (name === 'cambio_saldo_ahorro') {
+    const sign = value > 0 ? '+' : '';
+    return `${sign}$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  
+  // Behavioral alerts
+  if (['alerta_critica_ia', 'alerta_retiro_ahorros', 'alerta_caida_actividad'].includes(name)) {
+    return value === 1 ? 'Activa 🔴' : 'Inactiva 🟢';
+  }
+  
+  // Ratio fields
+  if (name === 'ratio_ingreso_egreso') {
+    return `${Number(value).toFixed(2)}x`;
+  }
+  
+  // Count fields
+  if (name === 'nro_cargas_fam') {
+    const val = Math.round(value);
+    return `${val} ${val === 1 ? 'carga' : 'cargas'}`;
+  }
+  if (name === 'nro_creditos') {
+    const val = Math.round(value);
+    return `${val} ${val === 1 ? 'crédito' : 'créditos'}`;
+  }
+  if (name === 'num_transacciones') {
+    const val = Math.round(value);
+    return `${val} ${val === 1 ? 'trx' : 'trxs'}`;
+  }
+  
+  return typeof value === 'number' ? value.toLocaleString() : String(value);
+}
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -90,9 +142,10 @@ export default function SocioProfile() {
   const rec = RECOMMENDATIONS[level] || RECOMMENDATIONS['Medio'];
 
   // Radar data from factors
+  const maxImpForRadar = Math.max(...factors.map(f => f.importance || 0.01));
   const radarData = factors.slice(0, 6).map(f => ({
     subject: (f.name || f.description || '').replace(/_/g, ' ').substring(0, 18),
-    value: Math.round((f.value || 0) * 100),
+    value: Math.round(((f.importance || 0) / maxImpForRadar) * 100),
     fullMark: 100,
   }));
 
@@ -166,19 +219,82 @@ export default function SocioProfile() {
             <div className="card-title">Factores de Riesgo</div>
             <Shield size={18} style={{ color: 'var(--text-muted)' }} />
           </div>
-          <div style={{ maxHeight: 340, overflowY: 'auto' }}>
-            {factors.map((f, i) => {
-              const impact = Math.abs(f.impact || f.value || 0);
-              const norm = Math.min(impact * 100, 100);
-              return (
-                <div key={i} className="factor-item">
-                  <span className="factor-name" title={f.description}>{f.description || f.name}</span>
-                  <div className="factor-bar" style={{ width: 60 }}>
-                    <div className="factor-bar-fill" style={{ width: `${norm}%`, background: getBarColor(norm) }} />
+          <div style={{ maxHeight: 380, overflowY: 'auto', paddingRight: '4px' }}>
+            {(() => {
+              const maxImpForBar = Math.max(...factors.map(x => x.importance || 0.01));
+              return factors.map((f, i) => {
+                const norm = Math.min(((f.importance || 0) / maxImpForBar) * 100, 100);
+                const isRiesgo = f.impact === 'negativo';
+                const isMitigante = f.impact === 'positivo';
+                const isNeutral = !isRiesgo && !isMitigante;
+                
+                // Color configuration for semantic card backgrounds and borders
+                let badgeBg = 'rgba(108, 117, 125, 0.1)';
+                let badgeColor = 'var(--text-secondary)';
+                let badgeLabel = 'Neutral';
+                
+                if (isRiesgo) {
+                  badgeBg = 'rgba(220, 53, 69, 0.1)';
+                  badgeColor = 'var(--riesgo-critico)';
+                  badgeLabel = 'Riesgo';
+                } else if (isMitigante) {
+                  badgeBg = 'rgba(40, 167, 69, 0.12)';
+                  badgeColor = 'var(--riesgo-bajo)';
+                  badgeLabel = 'Mitigante';
+                }
+
+                return (
+                  <div key={i} style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    padding: '14px',
+                    background: 'rgba(255, 255, 255, 0.45)',
+                    border: '1px solid rgba(0, 104, 55, 0.07)',
+                    borderRadius: '8px',
+                    marginBottom: '12px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                    transition: 'all 0.2s ease-in-out'
+                  }} className="factor-item-modern">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                      <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--coop-azul-texto)', lineHeight: 1.3 }}>
+                        {f.description || f.name}
+                      </span>
+                      <span style={{
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        background: badgeBg,
+                        color: badgeColor
+                      }}>
+                        {badgeLabel}
+                      </span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      <div>
+                        Valor actual: <strong style={{ color: 'var(--text-primary)' }}>{formatFactorValue(f.name, f.value)}</strong>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        Peso IA: {(f.importance * 100).toFixed(1)}%
+                      </div>
+                    </div>
+                    
+                    <div style={{ width: '100%', height: '6px', background: '#eaeaea', borderRadius: '3px', overflow: 'hidden', marginTop: '2px' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${norm}%`,
+                        background: getImpactColor(f.impact),
+                        borderRadius: '3px'
+                      }} />
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
             {factors.length === 0 && <div className="empty-state"><p>Sin datos</p></div>}
           </div>
         </div>

@@ -192,6 +192,7 @@ def generate_data(db_path: str, n_socios: int = 500):
             monto_pagado REAL DEFAULT 0,
             dias_atraso INTEGER DEFAULT 0,
             estado TEXT NOT NULL,
+            accion_preventiva TEXT DEFAULT NULL,
             FOREIGN KEY (credito_id) REFERENCES creditos(id)
         );
 
@@ -438,6 +439,7 @@ def generate_data(db_path: str, n_socios: int = 500):
                     "monto_pagado": 0,
                     "dias_atraso": 0,
                     "estado": "Pendiente",
+                    "accion_preventiva": None,
                 })
                 continue
 
@@ -529,14 +531,15 @@ def generate_data(db_path: str, n_socios: int = 500):
                 "monto_pagado": monto_pagado,
                 "dias_atraso": max(0, dias_atraso),
                 "estado": estado_pago,
+                "accion_preventiva": None,
             })
 
     cursor.executemany(
         """INSERT INTO pagos (credito_id, num_cuota, fecha_esperada, fecha_pago,
-                              monto_esperado, monto_pagado, dias_atraso, estado)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                              monto_esperado, monto_pagado, dias_atraso, estado, accion_preventiva)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         [(p["credito_id"], p["num_cuota"], p["fecha_esperada"], p["fecha_pago"],
-          p["monto_esperado"], p["monto_pagado"], p["dias_atraso"], p["estado"])
+          p["monto_esperado"], p["monto_pagado"], p["dias_atraso"], p["estado"], p["accion_preventiva"])
          for p in pagos]
     )
     conn.commit()

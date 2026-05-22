@@ -56,6 +56,17 @@ export const sociosAPI = {
 
 export const alertsAPI = {
   getAll: () => fetchJSON(`${API_BASE}/alerts`),
+  getPreventiveAlerts: () => fetchJSON(`${API_BASE}/alerts/preventive`),
+  savePreventiveAction: (pagoId, action) => {
+    return fetch(`${API_BASE}/alerts/preventive/${pagoId}/action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    }).then(res => {
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      return res.json();
+    });
+  }
 };
 
 export const modelAPI = {
