@@ -3575,3 +3575,389 @@ h1, h2, h3 {
   color: var(--text-muted);
   line-height: 1.4;
 }
+
+/* ============================================================
+   📱 RESPONSIVE MÓVIL — Radar Mora (Toad Code)
+   Breakpoints: ≤768px (tablet) y ≤480px (mobile)
+   ============================================================ */
+
+/* ── Tablet (≤ 768px) ──────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* HTML base: habilitar scroll en móvil */
+  html, body, #root {
+    overflow: auto;
+    height: auto;
+  }
+
+  .app-shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  /* Header compacto */
+  .app-header-top {
+    padding: 0 16px;
+    height: 50px;
+  }
+
+  .logo-badge {
+    display: none;
+  }
+
+  .logo-product {
+    font-size: 1rem;
+  }
+
+  .logo-subtitle {
+    display: none;
+  }
+
+  /* Nav horizontal scrollable en tablet */
+  .app-header-nav {
+    padding: 0 10px;
+    gap: 2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    height: 40px;
+  }
+
+  .header-nav-link {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Ocultar sidebar en móvil — usamos bottom nav */
+  .sidebar {
+    display: none;
+  }
+
+  /* Contenido principal sin margen de sidebar */
+  .main-content {
+    padding: 16px;
+    margin-left: 0 !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: calc(100vh - 90px - 60px); /* header + bottom nav */
+    padding-bottom: 80px; /* espacio para bottom nav */
+  }
+
+  /* Layout sin sidebar */
+  .app-layout {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  /* Page header compacto */
+  .page-header {
+    margin-bottom: 16px;
+  }
+
+  .page-header h1 {
+    font-size: 18px;
+  }
+
+  /* KPI grid: 2 columnas en tablet */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .kpi-value {
+    font-size: 22px;
+  }
+
+  .kpi-card {
+    padding: 14px;
+  }
+
+  /* Chart grids: una columna */
+  .chart-grid,
+  .chart-grid-equal,
+  .chart-grid-three {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* Cards compactas */
+  .card {
+    padding: 14px;
+  }
+
+  /* Filtros apilados */
+  .filters-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-input,
+  .filter-select {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  /* Tablas: scroll horizontal táctil */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table tbody td,
+  .data-table thead th {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* Tabs de AlertsPanel */
+  .tabs-nav {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    font-size: 0.78rem;
+    padding: 8px 12px;
+  }
+
+  /* Perfil socio: columna única */
+  .socio-profile-grid,
+  .profile-grid,
+  .profile-two-col {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  /* Risk factors */
+  .factors-list .factor-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  /* Preventive panel KPIs */
+  .preventive-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  /* Stat tabs del dashboard extendido */
+  .stat-tabs {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .stat-tab-btn {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+  }
+
+  /* Botones de contacto en perfil socio */
+  .contact-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Demo banner compacto */
+  .demo-banner,
+  .presentation-banner {
+    font-size: 0.72rem;
+    padding: 6px 12px;
+    text-align: center;
+  }
+}
+
+/* ── Mobile pequeño (≤ 480px) ──────────────────────────────── */
+@media (max-width: 480px) {
+
+  /* Header aún más compacto */
+  .app-header-top {
+    padding: 0 12px;
+    height: 46px;
+  }
+
+  .logo-product {
+    font-size: 0.9rem;
+  }
+
+  /* Nav: scrollable y con solo iconos visibles */
+  .app-header-nav {
+    height: 36px;
+    padding: 0 8px;
+  }
+
+  .header-nav-link {
+    padding: 5px 10px;
+    font-size: 0.72rem;
+    gap: 4px;
+  }
+
+  /* KPI: 1 columna en móvil muy pequeño */
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .kpi-value {
+    font-size: 19px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+  }
+
+  .kpi-card {
+    padding: 12px;
+  }
+
+  .kpi-icon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 10px;
+  }
+
+  /* Main content más estrecho */
+  .main-content {
+    padding: 12px;
+    padding-bottom: 76px;
+  }
+
+  /* Page header mini */
+  .page-header h1 {
+    font-size: 16px;
+  }
+
+  .page-header p {
+    font-size: 12px;
+  }
+
+  /* Cards sin padding excesivo */
+  .card {
+    padding: 12px;
+  }
+
+  .card-title {
+    font-size: 13px;
+  }
+
+  /* Tablas mini */
+  .data-table tbody td,
+  .data-table thead th {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  /* Badge más pequeño */
+  .badge {
+    font-size: 10px;
+    padding: 3px 7px;
+  }
+
+  /* Preventive KPIs: 1 columna */
+  .preventive-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ocultar texto de nav links, solo iconos */
+  .header-nav-link span.nav-label {
+    display: none;
+  }
+
+  /* Selector de acciones preventivas a ancho completo */
+  .accion-select,
+  select.accion-select {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+
+  /* Risk bar compacta */
+  .risk-bar-track {
+    max-width: 60px;
+  }
+}
+
+/* ── Bottom Navigation Bar — solo en móvil ─────────────────── */
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--coop-verde-oscuro);
+    border-top: 3px solid var(--coop-acento-dorado);
+    z-index: 300;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 12px;
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    transition: color 0.2s;
+    flex: 1;
+    position: relative;
+  }
+
+  .mobile-nav-item svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--coop-acento-dorado);
+  }
+
+  .mobile-nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: var(--coop-acento-dorado);
+    border-radius: 0 0 3px 3px;
+  }
+
+  .mobile-nav-badge {
+    position: absolute;
+    top: 4px;
+    right: 14px;
+    background: var(--riesgo-critico);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 8px;
+    min-width: 16px;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .mobile-nav-label {
+    line-height: 1;
+  }
+}
+
+/* Ocultar bottom nav en desktop */
+@media (min-width: 769px) {
+  .mobile-bottom-nav {
+    display: none;
+  }
+}
