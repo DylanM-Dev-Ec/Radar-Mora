@@ -5,7 +5,7 @@ import time
 from fastapi import APIRouter
 from database import execute_query, execute_query_one
 from routes.dashboard_extended_synthetic import get_extended_stats_synthetic
-from chart_series import enrich_mora_rango_series
+from chart_series import enrich_mora_rango_series, enrich_cargas_mora_series
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -416,6 +416,7 @@ def get_extended_stats():
     mora_por_cargas = distribute_others_proportionally(mora_por_cargas, "cargas")
     cargas_order = {'0 Cargas': 1, '1 Carga': 2, '2 Cargas': 3, '3 Cargas': 4, '4+ Cargas': 5}
     mora_por_cargas.sort(key=lambda x: cargas_order.get(x["cargas"], 99))
+    mora_por_cargas = enrich_cargas_mora_series(mora_por_cargas)
 
     # 3. Mora por Edad
     edad_results = execute_query("""

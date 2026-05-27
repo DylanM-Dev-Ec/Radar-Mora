@@ -181,6 +181,86 @@ def normalizar_ventana_preventiva_en_db() -> int:
     return len(updates)
 
 
+def _socios_has_column(col: str) -> bool:
+    if DB_URL:
+        row = execute_query_one(
+            """
+            SELECT 1 AS ok FROM information_schema.columns
+            WHERE table_name = 'socios' AND column_name = ?
+            """,
+            (col,),
+        )
+        return bool(row)
+    rows = execute_query("PRAGMA table_info(socios)")
+    return any(r.get("name") == col for r in rows)
+
+
+def normalizar_cargas_familiares_en_db() -> int:
+    """
+    Asigna nro_cargas_fam por socio: más cargas en socios con mayor mora
+    (más hijos / dependientes → mayor riesgo de impago).
+    """
+    if DB_URL:
+        row = execute_query_one(
+            "SELECT 1 AS ok FROM information_schema.tables WHERE table_name = 'socios'"
+        )
+    else:
+        row = execute_query_one(
+            "SELECT 1 AS ok FROM sqlite_master WHERE type='table' AND name='socios'"
+        )
+    if not row:
+        return 0
+
+    if not _socios_has_column("nro_cargas_fam"):
+        try:
+            execute_write("ALTER TABLE socios ADD COLUMN nro_cargas_fam INTEGER DEFAULT 0")
+        except Exception:
+            if not _socios_has_column("nro_cargas_fam"):
+                return 0
+
+    rows = execute_query(
+        """
+        SELECT
+            s.id AS socio_id,
+            CASE WHEN EXISTS (
+                SELECT 1 FROM creditos c
+                WHERE c.socio_id = s.id AND c.estado = 'Mora'
+            ) THEN 1 ELSE 0 END AS en_mora,
+            COALESCE((
+                SELECT MAX(p.dias_atraso)
+                FROM pagos p
+                INNER JOIN creditos c ON p.credito_id = c.id
+                WHERE c.socio_id = s.id
+            ), 0) AS max_dias
+        FROM socios s
+        """
+    )
+
+    updates: list[tuple] = []
+    for r in rows:
+        sid = int(r["socio_id"])
+        en_mora = int(r.get("en_mora") or 0)
+        max_dias = int(r.get("max_dias") or 0)
+        base = sid % 3
+
+        if en_mora:
+            cargas = min(5, 2 + (sid % 3) + (1 if max_dias > 45 else 0))
+        elif max_dias > 15:
+            cargas = min(4, 1 + base + (1 if max_dias > 30 else 0))
+        elif max_dias > 0:
+            cargas = min(3, base)
+        else:
+            cargas = base
+
+        updates.append((cargas, sid))
+
+    if not updates:
+        return 0
+
+    execute_many("UPDATE socios SET nro_cargas_fam = ? WHERE id = ?", updates)
+    return len(updates)
+
+
 def get_db_path() -> str:
     """Retorna la ruta absoluta de la base de datos."""
     return DB_URL if DB_URL else DB_PATH

@@ -166,7 +166,8 @@ def generate_data(db_path: str, n_socios: int = 500):
             agencia TEXT NOT NULL,
             telefono TEXT,
             email TEXT,
-            estado TEXT NOT NULL DEFAULT 'Activo'
+            estado TEXT NOT NULL DEFAULT 'Activo',
+            nro_cargas_fam INTEGER NOT NULL DEFAULT 0
         );
 
         CREATE TABLE creditos (
@@ -263,6 +264,13 @@ def generate_data(db_path: str, n_socios: int = 500):
         fecha_ingreso = now - relativedelta(years=antiguedad_anios, months=random.randint(0, 11))
         estado = "Activo" if random.random() < 0.92 else "Inactivo"
 
+        if perfil == "bueno":
+            nro_cargas = random.choices([0, 1, 2], weights=[45, 40, 15])[0]
+        elif perfil == "deterioro":
+            nro_cargas = random.choices([1, 2, 3], weights=[25, 50, 25])[0]
+        else:
+            nro_cargas = random.choices([2, 3, 4, 5], weights=[15, 30, 35, 20])[0]
+
         socios.append({
             "nombre": nombre_completo,
             "cedula": cedula,
@@ -274,16 +282,17 @@ def generate_data(db_path: str, n_socios: int = 500):
             "email": _random_email(nombre_pila, apellido1),
             "estado": estado,
             "perfil": perfil,
+            "nro_cargas_fam": nro_cargas,
         })
 
     # Insertar socios
     cursor.executemany(
         """INSERT INTO socios (nombre, cedula, edad, ocupacion, fecha_ingreso,
-                               agencia, telefono, email, estado)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                               agencia, telefono, email, estado, nro_cargas_fam)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         [(s["nombre"], s["cedula"], s["edad"], s["ocupacion"],
           s["fecha_ingreso"], s["agencia"], s["telefono"], s["email"],
-          s["estado"]) for s in socios]
+          s["estado"], s["nro_cargas_fam"]) for s in socios]
     )
     conn.commit()
     print(f"   ✅ {n_socios} socios insertados")

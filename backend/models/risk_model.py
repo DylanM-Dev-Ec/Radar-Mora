@@ -172,7 +172,7 @@ def compute_features(socio_id: int = None) -> pd.DataFrame:
                     CASE WHEN EXISTS(SELECT 1 FROM creditos c WHERE c.socio_id = s.id AND c.estado = 'Mora') THEN 1 ELSE 0 END as alerta_critica_ia,
                     COALESCE((SELECT MAX(c.cuota_mensual) * 3.5 FROM creditos c WHERE c.socio_id = s.id), 1200.0) as ingresos_socio,
                     COALESCE((SELECT MAX(c.cuota_mensual) * 3.0 FROM creditos c WHERE c.socio_id = s.id), 1000.0) as egresos_socio,
-                    (s.id % 4) as nro_cargas_fam,
+                    COALESCE(s.nro_cargas_fam, 0) as nro_cargas_fam,
                     COALESCE((SELECT COUNT(*) FROM creditos c WHERE c.socio_id = s.id), 0) as nro_creditos
                 FROM socios s
                 WHERE s.id = ?
@@ -193,7 +193,7 @@ def compute_features(socio_id: int = None) -> pd.DataFrame:
                     CASE WHEN EXISTS(SELECT 1 FROM creditos c WHERE c.socio_id = s.id AND c.estado = 'Mora') THEN 1 ELSE 0 END as alerta_critica_ia,
                     COALESCE((SELECT MAX(c.cuota_mensual) * 3.5 FROM creditos c WHERE c.socio_id = s.id), 1200.0) as ingresos_socio,
                     COALESCE((SELECT MAX(c.cuota_mensual) * 3.0 FROM creditos c WHERE c.socio_id = s.id), 1000.0) as egresos_socio,
-                    (s.id % 4) as nro_cargas_fam,
+                    COALESCE(s.nro_cargas_fam, 0) as nro_cargas_fam,
                     COALESCE((SELECT COUNT(*) FROM creditos c WHERE c.socio_id = s.id), 0) as nro_creditos
                 FROM socios s
             """
@@ -430,6 +430,18 @@ def compute_explainable_score(ctx: dict) -> float:
     if dias == 0 and not ctx.get("en_mora") and cuotas == 0:
         score = min(score, 28.0)
 
+    cargas = int(ctx.get("nro_cargas_fam") or 0)
+    if cargas >= 4:
+        score += 6.0
+    elif cargas == 3:
+        score += 4.5
+    elif cargas == 2:
+        score += 2.8
+    elif cargas == 1:
+        score += 1.2
+    elif cargas == 0 and dias == 0 and not ctx.get("en_mora"):
+        score -= 1.5
+
     stat_adj = float(ctx.get("statistical_adjustment") or 0)
     if stat_adj > 0:
         score += min(stat_adj, 12.0) * 0.7
@@ -563,13 +575,37 @@ def build_explainable_factors(ctx: dict) -> list[dict]:
         })
 
     cargas = int(ctx.get("nro_cargas_fam") or 0)
-    if cargas >= 3:
+    if cargas >= 4:
+        factors.append({
+            "name": "nro_cargas_fam",
+            "description": f"{cargas} cargas familiares — alta presión sobre ingresos",
+            "value": cargas,
+            "importance": 0.14,
+            "impact": "negativo",
+        })
+    elif cargas == 3:
         factors.append({
             "name": "nro_cargas_fam",
             "description": f"{cargas} cargas familiares declaradas",
             "value": cargas,
-            "importance": 0.09,
+            "importance": 0.11,
             "impact": "negativo",
+        })
+    elif cargas == 2:
+        factors.append({
+            "name": "nro_cargas_fam",
+            "description": f"{cargas} cargas familiares declaradas",
+            "value": cargas,
+            "importance": 0.08,
+            "impact": "negativo",
+        })
+    elif cargas == 1:
+        factors.append({
+            "name": "nro_cargas_fam",
+            "description": "1 carga familiar registrada",
+            "value": 1,
+            "importance": 0.05,
+            "impact": "neutro",
         })
     elif cargas == 0:
         factors.append({

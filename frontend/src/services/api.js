@@ -188,7 +188,11 @@ const savePersistedAction = (pagoId, action) => {
 const MOCK_DB = {
   overview: {
     total_socios: 29821,
+    socios_activos: 29821,
+    total_socios_registrados: 32370,
+    pct_socios_activos: 92.1,
     creditos_vigentes: 32088,
+    total_creditos: 32088,
     cartera_total: 408621430.2,
     tasa_morosidad: 16.8,
     tasa_morosidad_anterior: 21.4,

@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from database import execute_query, execute_query_one
 from models.risk_model import predict_all, model_exists
 from models.cobranza_priority import get_casos_prioritarios_cobranza, get_operational_risk_distribution
-from chart_series import enrich_trend_series, enrich_mora_rango_series
+from chart_series import enrich_trend_series, enrich_mora_rango_series, enrich_cargas_mora_series
 import time
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
@@ -34,6 +34,14 @@ def get_overview():
     total_socios = execute_query_one(
         "SELECT COUNT(*) as cnt FROM socios WHERE estado = 'Activo'"
     )["cnt"]
+
+    total_socios_registrados = execute_query_one(
+        "SELECT COUNT(*) as cnt FROM socios"
+    )["cnt"]
+
+    pct_socios_activos = round(
+        total_socios / max(1, total_socios_registrados) * 100, 1
+    )
 
     creditos_vigentes = execute_query_one(
         "SELECT COUNT(*) as cnt FROM creditos WHERE estado IN ('Vigente', 'Mora', 'Reestructurado')"
@@ -70,7 +78,11 @@ def get_overview():
 
     return {
         "total_socios": total_socios,
+        "socios_activos": total_socios,
+        "total_socios_registrados": total_socios_registrados,
+        "pct_socios_activos": pct_socios_activos,
         "creditos_vigentes": creditos_vigentes,
+        "total_creditos": creditos_vigentes,
         "cartera_total": round(cartera, 2),
         "tasa_morosidad": tasa_morosidad,
         "socios_riesgo_alto": socios_alto,
@@ -533,6 +545,7 @@ def get_extended_stats():
     mora_por_cargas = distribute_others_proportionally(mora_por_cargas, "cargas")
     cargas_order = {'0 Cargas': 1, '1 Carga': 2, '2 Cargas': 3, '3 Cargas': 4, '4+ Cargas': 5}
     mora_por_cargas.sort(key=lambda x: cargas_order.get(x["cargas"], 99))
+    mora_por_cargas = enrich_cargas_mora_series(mora_por_cargas)
 
     # 3. Mora por Edad
     edad_results = execute_query("""

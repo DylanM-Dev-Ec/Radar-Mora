@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle, TrendingUp, Bell, ShieldAlert, Activity,
+  Users, CreditCard, Wallet, Percent,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -114,8 +115,47 @@ function DashboardStandard() {
     overview?.cola_semanal_operativa
     ?? overview?.casos_gestion_semana
     ?? 0;
-  const totalSocios = overview?.total_socios || 1;
+  const totalSocios = overview?.total_socios || overview?.socios_activos || 1;
   const pctPrioritarios = ((universoRiesgo / totalSocios) * 100).toFixed(1);
+  const sociosActivos = overview?.socios_activos ?? overview?.total_socios ?? 0;
+  const pctActivos = overview?.pct_socios_activos
+    ?? (overview?.total_socios_registrados
+      ? Math.round((sociosActivos / overview.total_socios_registrados) * 1000) / 10
+      : 100);
+  const totalCreditos = overview?.total_creditos ?? overview?.creditos_vigentes ?? 0;
+  const carteraTotal = overview?.cartera_total ?? 0;
+  const tasaMorosidad = overview?.tasa_morosidad ?? 0;
+
+  const coopKpis = [
+    {
+      icon: Users,
+      value: formatNumber(sociosActivos),
+      label: 'Socios activos',
+      hint: `${pctActivos}% del total registrado`,
+      accent: 'green',
+    },
+    {
+      icon: CreditCard,
+      value: formatNumber(totalCreditos),
+      label: 'Total créditos vigentes',
+      hint: 'Operaciones activas en cartera',
+      accent: 'gold',
+    },
+    {
+      icon: Wallet,
+      value: formatCurrency(carteraTotal),
+      label: 'Cartera colocada',
+      hint: 'Monto total desembolsado activo',
+      accent: 'blue',
+    },
+    {
+      icon: Percent,
+      value: `${Number(tasaMorosidad).toFixed(1)}%`,
+      label: 'Tasa de morosidad',
+      hint: 'Créditos en mora / cartera activa',
+      accent: 'red',
+    },
+  ];
 
   const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
     if (percent < 0.07) return null;
@@ -187,6 +227,25 @@ function DashboardStandard() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Indicadores clave de la cooperativa */}
+      <section className="dashboard-coop-kpis" aria-label="Indicadores clave de la cooperativa">
+        {coopKpis.map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <div key={kpi.label} className={`coop-kpi-card coop-kpi-card--${kpi.accent}`}>
+              <div className="coop-kpi-icon">
+                <Icon size={20} />
+              </div>
+              <div className="coop-kpi-body">
+                <span className="coop-kpi-value">{kpi.value}</span>
+                <span className="coop-kpi-label">{kpi.label}</span>
+                <span className="coop-kpi-hint">{kpi.hint}</span>
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       <DashboardPreventiveWidget />

@@ -2658,6 +2658,108 @@ h1, h2, h3 {
   margin: -30px -30px 0;
 }
 
+.dashboard-coop-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding: 18px 30px 22px;
+  background: var(--bg-primary, #f4f7f5);
+  border-bottom: 1px solid rgba(0, 104, 55, 0.08);
+}
+
+.coop-kpi-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 104, 55, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 43, 91, 0.04);
+}
+
+.coop-kpi-card--green {
+  border-top: 3px solid var(--coop-verde-primario);
+}
+
+.coop-kpi-card--gold {
+  border-top: 3px solid var(--coop-acento-dorado);
+}
+
+.coop-kpi-card--blue {
+  border-top: 3px solid #0d6efd;
+}
+
+.coop-kpi-card--red {
+  border-top: 3px solid var(--riesgo-critico);
+}
+
+.coop-kpi-icon {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 104, 55, 0.08);
+  color: var(--coop-verde-primario);
+}
+
+.coop-kpi-card--gold .coop-kpi-icon {
+  background: rgba(184, 134, 11, 0.12);
+  color: var(--coop-acento-dorado);
+}
+
+.coop-kpi-card--blue .coop-kpi-icon {
+  background: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
+}
+
+.coop-kpi-card--red .coop-kpi-icon {
+  background: rgba(220, 53, 69, 0.1);
+  color: var(--riesgo-critico);
+}
+
+.coop-kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.coop-kpi-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--coop-azul-texto);
+  line-height: 1.2;
+}
+
+.coop-kpi-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--coop-azul-texto);
+}
+
+.coop-kpi-hint {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-coop-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-coop-kpis {
+    grid-template-columns: 1fr;
+    padding: 14px 16px;
+  }
+}
+
 .dashboard-hero {
   background: linear-gradient(120deg, var(--coop-verde-primario) 0%, var(--coop-verde-oscuro) 100%);
   border-bottom: 4px solid var(--coop-acento-dorado);

@@ -32,6 +32,7 @@ from database import (
     get_table_count,
     normalizar_dias_atraso_en_db,
     normalizar_ventana_preventiva_en_db,
+    normalizar_cargas_familiares_en_db,
 )
 from models.data_generator import generate_data
 from models.risk_model import train_model, model_exists
@@ -68,6 +69,19 @@ def main():
             try:
                 from models.preventive_cache import invalidate_preventive_cache
                 invalidate_preventive_cache()
+            except Exception:
+                pass
+        cargas = normalizar_cargas_familiares_en_db()
+        if cargas:
+            _out(f"\n[DB] Cargas familiares normalizadas: {cargas} socios")
+            try:
+                from models.statistical_risk_factors import invalidate_statistical_benchmarks
+                invalidate_statistical_benchmarks()
+            except Exception:
+                pass
+            try:
+                from models.risk_model import _invalidate_predict_all_cache
+                _invalidate_predict_all_cache()
             except Exception:
                 pass
 

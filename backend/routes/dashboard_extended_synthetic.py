@@ -173,12 +173,21 @@ def get_extended_stats_synthetic() -> dict:
     )
 
     mora_por_cargas = _bucket_query(
-        "CASE WHEN s.id % 5 = 0 THEN '0 Cargas' WHEN s.id % 5 = 1 THEN '1 Carga' "
-        "WHEN s.id % 5 = 2 THEN '2 Cargas' WHEN s.id % 5 = 3 THEN '3 Cargas' ELSE '4+ Cargas' END",
+        """
+        CASE
+            WHEN COALESCE(s.nro_cargas_fam, 0) = 0 THEN '0 Cargas'
+            WHEN s.nro_cargas_fam = 1 THEN '1 Carga'
+            WHEN s.nro_cargas_fam = 2 THEN '2 Cargas'
+            WHEN s.nro_cargas_fam = 3 THEN '3 Cargas'
+            ELSE '4+ Cargas'
+        END
+        """,
         "cargas",
     )
     cargas_order = {"0 Cargas": 1, "1 Carga": 2, "2 Cargas": 3, "3 Cargas": 4, "4+ Cargas": 5}
     mora_por_cargas.sort(key=lambda x: cargas_order.get(x["cargas"], 99))
+    from chart_series import enrich_cargas_mora_series
+    mora_por_cargas = enrich_cargas_mora_series(mora_por_cargas)
 
     mora_por_edad = _bucket_query(
         "CASE WHEN s.edad < 25 THEN 'Jóvenes (<25)' WHEN s.edad < 40 THEN 'Adultos Jóvenes (25-39)' "

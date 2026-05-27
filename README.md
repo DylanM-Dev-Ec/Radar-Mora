@@ -3,12 +3,13 @@
 <div align="center">
 
 ![Ganador Hackathon](https://img.shields.io/badge/🥇%20GANADOR-CoopTech%20Hackathon%202026-gold?style=for-the-badge&logo=trophy)
+![Equipo](https://img.shields.io/badge/Equipo-Toad%20Code-6DB33F?style=for-the-badge&logo=frog&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 
-**🥇 Proyecto ganador del CoopTech Hackathon 2026**
+**🥇 Proyecto ganador del CoopTech Hackathon 2026 — Equipo Toad Code**
 
 Sistema de **perfilamiento de riesgo crediticio y cobranza preventiva** para la **Cooperativa de Ahorro y Crédito Tulcán**, con predicción de morosidad en tiempo real mediante **Machine Learning (Random Forest)**.
 
@@ -32,7 +33,7 @@ Radar Mora es una plataforma integral que permite a los asesores financieros de 
 
 ## 🏅 Reconocimiento — CoopTech Hackathon 2026
 
-> Este proyecto fue desarrollado para el **CoopTech Hackathon 2026** organizado por la **Cooperativa de Ahorro y Crédito Tulcán**, resultando **ganador** de la competencia entre los equipos participantes.
+> Este proyecto fue desarrollado por el equipo **🐸 Toad Code** para el **CoopTech Hackathon 2026** organizado por la **Cooperativa de Ahorro y Crédito Tulcán**, resultando **ganador** de la competencia entre los equipos participantes.
 
 ### Métricas del Sistema (Producción)
 
@@ -136,6 +137,6 @@ Proyecto desarrollado para la **Cooperativa de Ahorro y Crédito Tulcán** como 
 
 <div align="center">
 
-Hecho con ❤️ por el equipo **Radar Mora** · CoopTech Hackathon 2026 🏆
+Hecho con ❤️ por el equipo **🐸 Toad Code** · CoopTech Hackathon 2026 🏆
 
 </div>
