@@ -15,6 +15,14 @@ Sistema de **perfilamiento de riesgo crediticio y cobranza preventiva** para la 
 
 [🚀 Ver Demo en Vivo](https://radar-mora.vercel.app) · [📖 Guía de Instalación](./INSTALACION.md) · [🐛 Reportar Bug](https://github.com/CristopherLomas/Radar-Mora/issues)
 
+## 👨‍💻 Sobre mi participación (Fork Personal)
+
+En la versión original de este proyecto colaborativo, mi rol principal se centró en:
+* **Desarrollo del Frontend:** Estructuración de las interfaces de usuario (React/Vite) y garantía del diseño responsivo para dispositivos móviles.
+* **Control de Calidad (QA):** Depuración de código y corrección de errores para asegurar la estabilidad.
+
+**Objetivo de este repositorio:**
+He creado esta copia como mi entorno de desarrollo individual. Mis metas aquí son refactorizar mi código del Frontend, y experimentar con nuevas integraciones independientes para expandir mi portafolio profesional.
 </div>
 
 ---
